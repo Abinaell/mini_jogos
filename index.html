@@ -167,8 +167,8 @@
             });
             const data = await response.json();
             if (data.success) {
-                tokens = Math.max(1, data.user_data.tokens);
-                tokensPerMinute = Math.max(1, data.user_data.tokens_per_minute || 1);
+                tokens = Math.max(data.user_data.tokens, 1);
+                tokensPerMinute = Math.max(data.user_data.tokens_per_minute, 1);
                 return data.user_data;
             } else {
                 throw new Error('Erro ao registrar ou logar o usuário');
@@ -190,8 +190,8 @@
             });
             const data = await response.json();
             if (data.success) {
-                document.getElementById('tokensText').innerText = `Tokens: ${formatNumber(Math.max(1, tokens))}`;
-                document.getElementById('tokensPerMinute').innerText = `Tokens por minuto: ${formatNumber(Math.max(1, tokensPerMinute))}`;
+                document.getElementById('tokensText').innerText = `Tokens: ${formatNumber(tokens)}`;
+                document.getElementById('tokensPerMinute').innerText = `Tokens por minuto: ${formatNumber(tokensPerMinute)}`;
                 console.log(`Tokens atualizados: ${tokens}, Tokens por minuto: ${tokensPerMinute}`);
             } else {
                 console.error('Erro ao atualizar tokens');
@@ -214,8 +214,8 @@
         function generateTokensGradually() {
             setInterval(() => {
                 if (tokensPerMinute > 0) {
-                    tokens += tokensPerMinute / 60;
-                    updateTokens(Math.max(1, tokens), tokensPerMinute);
+                    tokens = Math.max(1, Math.round(tokens + tokensPerMinute / 60));
+                    updateTokens(tokens, tokensPerMinute);
                 }
             }, 1000);
         }
@@ -224,8 +224,8 @@
             try {
                 const userData = await registerOrLogin();
                 document.getElementById('userName').innerText = `${userData.name}`;
-                document.getElementById('tokensText').innerText = `Tokens: ${formatNumber(Math.max(1, tokens))}`;
-                document.getElementById('tokensPerMinute').innerText = `Tokens por minuto: ${formatNumber(Math.max(1, tokensPerMinute))}`;
+                document.getElementById('tokensText').innerText = `Tokens: ${formatNumber(tokens)}`;
+                document.getElementById('tokensPerMinute').innerText = `Tokens por minuto: ${formatNumber(tokensPerMinute)}`;
 
                 generateTokensGradually();
 
@@ -238,9 +238,8 @@
                 });
 
                 document.getElementById('buy1TokenPerMinute').addEventListener('click', buyTokensPerMinute);
-
             } catch (error) {
-                console.error(error);
+                console.error('Erro ao inicializar o jogo:', error);
             }
         }
 
