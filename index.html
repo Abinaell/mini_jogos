@@ -4,6 +4,7 @@
     <title>Mini Game</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
+        /* (Mesma estilização fornecida anteriormente) */
         body, html {
             margin: 0;
             padding: 0;
@@ -14,7 +15,7 @@
             align-items: center;
             background-color: #000000;
             font-family: Arial, sans-serif;
-            overflow: hidden;
+            overflow: hidden; /* Evita o scroll */
         }
         #gameCanvas {
             width: 100%;
@@ -23,7 +24,7 @@
             justify-content: center;
             align-items: center;
             position: relative;
-            flex-direction: column;
+            flex-direction: column; /* Alinha os elementos verticalmente */
         }
         #blueSquare {
             width: 45vw;
@@ -32,22 +33,22 @@
             position: absolute;
             top: 62%;
             left: 50%;
-            transform: translate(-50%, -50%) rotate(0deg);
-            z-index: 1;
-            animation: spin 5s linear infinite;
+            transform: translate(-50%, -50%) rotate(0deg); /* Centraliza e gira o quadrado azul */
+            z-index: 1; /* Coloca o quadrado azul acima dos outros elementos */
+            animation: spin 5s linear infinite; /* Adiciona a animação de rotação */
         }
         #greenSquare {
             width: 30vw;
             height: 30vw;
             background-color: #00ff00;
-            background-image: url('https://cdn.discordapp.com/attachments/1008852458417696889/1268341169939812444/Gggg.PNG?ex=66ac1243&is=66aac0c3&hm=8a7e35df3bf8aa771e7408b196be766b288ce398ca1b0bed4a146a7ec698e206&');
-            background-size: cover;
+            background-image: url('https://cdn.discordapp.com/attachments/1008852458417696889/1268341169939812444/Gggg.PNG?ex=66ac1243&is=66aac0c3&hm=8a7e35df3bf8aa771e7408b196be766b288ce398ca1b0bed4a146a7ec698e206&'); /* Substitua 'texture_url' pela URL da sua textura */
+            background-size: cover; /* Faz com que a textura cubra todo o quadrado */
             position: absolute;
             top: 62%;
             left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 2;
-            cursor: pointer;
+            transform: translate(-50%, -50%); /* Centraliza o quadrado verde */
+            z-index: 2; /* Coloca o quadrado verde atrás do quadrado azul */
+            cursor: pointer; /* Faz o quadrado parecer clicável */
         }
         @keyframes spin {
             from { transform: translate(-50%, -50%) rotate(0deg); }
@@ -59,41 +60,41 @@
             left: 10px;
             font-size: 4vw;
             color: #ffffff;
-            z-index: 1;
+            z-index: 1; /* Ajusta a ordem dos elementos */
         }
         #tokens {
             position: relative;
             font-size: 8vw;
             color: #ffffff;
-            margin-bottom: 20px;
-            top: -60px;
+            margin-bottom: 20px; /* Adiciona margem abaixo do texto dos tokens */
+            top: -60px; /* Move o texto dos tokens para cima */
             display: flex;
             align-items: center;
-            z-index: 1;
+            z-index: 1; /* Ajusta a ordem dos elementos */
         }
         #tokens img {
-            width: 9vw;
+            width: 9vw; /* Ajuste o tamanho do logo conforme necessário */
             height: auto;
-            margin-right: 10px;
+            margin-right: 10px; /* Espaçamento entre o logo e o texto */
         }
         #tokensPerMinute {
             position: relative;
             font-size: 4vw;
             color: #ffffff;
-            margin-top: 10px;
-            z-index: 1;
+            margin-top: 10px; /* Adiciona margem acima do texto dos tokens por minuto */
+            z-index: 1; /* Ajusta a ordem dos elementos */
         }
         #modal {
-            display: none;
+            display: none; /* Esconde o modal inicialmente */
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
+            background-color: rgba(0, 0, 0, 0.8); /* Fundo semitransparente */
             justify-content: center;
             align-items: center;
-            z-index: 3;
+            z-index: 3; /* Coloca o modal acima de outros elementos */
             flex-direction: column;
             color: white;
             font-size: 2vw;
@@ -121,12 +122,12 @@
     <div id="gameCanvas">
         <div id="userName"></div>
         <div id="tokens">
-            <img src="https://cdn.discordapp.com/attachments/1008852458417696889/1268367342287585300/logoo.png?ex=66ac2aa3&is=66aad923&hm=317cc6bceb0ad5279776825fc269d78f93e3f4275b689f42c38c3fcb9b92f03c&" alt="Token Logo">
-            <span id="tokensText">Tokens: 1</span>
+            <img src="https://cdn.discordapp.com/attachments/1008852458417696889/1268367342287585300/logoo.png?ex=66ac2aa3&is=66aad923&hm=317cc6bceb0ad5279776825fc269d78f93e3f4275b689f42c38c3fcb9b92f03c&" alt="Token Logo"> <!-- Substitua "token_logo_url" pelo URL do logo dos tokens -->
+            <span id="tokensText">Tokens: 0</span>
         </div>
-        <div id="tokensPerMinute">Tokens por minuto: 1</div>
-        <div id="blueSquare"></div>
-        <div id="greenSquare"></div>
+        <div id="tokensPerMinute">Tokens por minuto: 0</div>
+        <div id="blueSquare"></div> <!-- Novo quadrado azul -->
+        <div id="greenSquare"></div> <!-- Quadrado verde -->
     </div>
 
     <div id="modal">
@@ -139,9 +140,10 @@
     </div>
 
     <script>
-        let tokens = 1;
-        let tokensPerMinute = 1;
+        let tokens = 0;
+        let tokensPerMinute = 0; // Variável para armazenar tokens por minuto
 
+        // Função para obter parâmetros de consulta da URL
         function getQueryParams() {
             const params = {};
             const queryString = window.location.search.substring(1);
@@ -153,10 +155,12 @@
             return params;
         }
 
+        // Obter o ID e nome do usuário do Telegram da URL
         const queryParams = getQueryParams();
         const userId = queryParams['user_id'];
         const userName = queryParams['user_name'];
 
+        // Função para registrar ou logar o usuário
         async function registerOrLogin() {
             const response = await fetch('/register_or_login', {
                 method: 'POST',
@@ -167,19 +171,15 @@
             });
             const data = await response.json();
             if (data.success) {
-                tokens = Math.max(data.user_data.tokens, 1);
-                tokensPerMinute = Math.max(data.user_data.tokens_per_minute, 1);
+                tokens = data.user_data.tokens;
+                tokensPerMinute = data.user_data.tokens_per_minute || 0;
                 return data.user_data;
             } else {
                 throw new Error('Erro ao registrar ou logar o usuário');
             }
         }
 
-        function formatNumber(number) {
-            if (number === null || number === undefined) return "1";
-            return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-        }
-
+        // Função para atualizar tokens e tokens por minuto no servidor
         async function updateTokens(tokens, tokensPerMinute) {
             const response = await fetch('/update_tokens', {
                 method: 'POST',
@@ -190,14 +190,15 @@
             });
             const data = await response.json();
             if (data.success) {
-                document.getElementById('tokensText').innerText = `Tokens: ${formatNumber(tokens)}`;
-                document.getElementById('tokensPerMinute').innerText = `Tokens por minuto: ${formatNumber(tokensPerMinute)}`;
+                document.getElementById('tokensText').innerText = `Tokens: ${Math.floor(tokens)}`;
+                document.getElementById('tokensPerMinute').innerText = `Tokens por minuto: ${Math.floor(tokensPerMinute)}`;
                 console.log(`Tokens atualizados: ${tokens}, Tokens por minuto: ${tokensPerMinute}`);
             } else {
                 console.error('Erro ao atualizar tokens');
             }
         }
 
+        // Função para comprar tokens por minuto
         function buyTokensPerMinute() {
             const cost = 100;
             const tokensToAdd = 1;
@@ -211,22 +212,25 @@
             }
         }
 
+        // Função para gerar tokens gradualmente com base nos tokens por minuto
         function generateTokensGradually() {
             setInterval(() => {
                 if (tokensPerMinute > 0) {
-                    tokens = Math.max(1, Math.round(tokens + tokensPerMinute / 60));
+                    tokens += tokensPerMinute / 60;
                     updateTokens(tokens, tokensPerMinute);
                 }
-            }, 1000);
+            }, 1000); // Atualiza a cada segundo
         }
 
+        // Inicializar a aplicação
         async function init() {
             try {
                 const userData = await registerOrLogin();
                 document.getElementById('userName').innerText = `${userData.name}`;
-                document.getElementById('tokensText').innerText = `Tokens: ${formatNumber(tokens)}`;
-                document.getElementById('tokensPerMinute').innerText = `Tokens por minuto: ${formatNumber(tokensPerMinute)}`;
+                document.getElementById('tokensText').innerText = `Tokens: ${tokens}`;
+                document.getElementById('tokensPerMinute').innerText = `Tokens por minuto: ${tokensPerMinute}`;
 
+                // Incrementar tokens e salvar no servidor
                 generateTokensGradually();
 
                 document.getElementById('greenSquare').addEventListener('click', () => {
@@ -237,12 +241,14 @@
                     document.getElementById('modal').style.display = 'none';
                 });
 
+                // Configurar evento de clique para comprar tokens por minuto
                 document.getElementById('buy1TokenPerMinute').addEventListener('click', buyTokensPerMinute);
             } catch (error) {
-                console.error('Erro ao inicializar o jogo:', error);
+                console.error(error);
             }
         }
 
+        // Iniciar o jogo
         init();
     </script>
 </body>
