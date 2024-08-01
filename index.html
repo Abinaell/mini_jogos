@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mini Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #000000;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            flex-direction: column;
+        }
+        #blueSquare {
+            width: 45vw;
+            height: 45vw;
+            background-color: #0000ff;
+            position: absolute;
+            top: 62%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(0deg);
+            z-index: 1;
+            animation: spin 5s linear infinite;
+        }
+        #greenSquare {
+            width: 30vw;
+            height: 30vw;
+            background-color: #00ff00;
+            background-image: url('https://cdn.discordapp.com/attachments/1008852458417696889/1268341169939812444/Gggg.PNG?ex=66ac1243&is=66aac0c3&hm=8a7e35df3bf8aa771e7408b196be766b288ce398ca1b0bed4a146a7ec698e206&');
+            background-size: cover;
+            position: absolute;
+            top: 62%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+            cursor: pointer;
+        }
+        @keyframes spin {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        #userName {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 4vw;
+            color: #ffffff;
+            z-index: 1;
+        }
+        #tokens {
+            position: relative;
+            font-size: 8vw;
+            color: #ffffff;
+            margin-bottom: 20px;
+            top: -60px;
+            display: flex;
+            align-items: center;
+            z-index: 1;
+        }
+        #tokens img {
+            width: 9vw;
+            height: auto;
+            margin-right: 10px;
+        }
+        #tokensPerMinute {
+            position: relative;
+            font-size: 4vw;
+            color: #ffffff;
+            margin-top: 10px;
+            z-index: 1;
+        }
+        #modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 3;
+            flex-direction: column;
+            color: white;
+            font-size: 2vw;
+        }
+        #closeModal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 2vw;
+            cursor: pointer;
+        }
+        #buyTokensPerMinute {
+            margin-top: 20px;
+            text-align: center;
+        }
+        #buyTokensPerMinute button {
+            padding: 10px 20px;
+            font-size: 2vw;
+            cursor: pointer;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameCanvas">
+        <div id="userName"></div>
+        <div id="tokens">
+            <img src="https://cdn.discordapp.com/attachments/1008852458417696889/1268367342287585300/logoo.png?ex=66ac2aa3&is=66aad923&hm=317cc6bceb0ad5279776825fc269d78f93e3f4275b689f42c38c3fcb9b92f03c&" alt="Token Logo">
+            <span id="tokensText">Tokens: 1</span>
+        </div>
+        <div id="tokensPerMinute">Tokens por minuto: 1</div>
+        <div id="blueSquare"></div>
+        <div id="greenSquare"></div>
+    </div>
+
+    <div id="modal">
+        <div id="closeModal">X</div>
+        <h1>Comprar Tokens por Minuto</h1>
+        <div id="buyTokensPerMinute">
+            <p>Preço: 100 tokens por 1 token/minuto</p>
+            <button id="buy1TokenPerMinute">Comprar 1 Token por Minuto</button>
+        </div>
+    </div>
+
+    <script>
+        let tokens = 1;
+        let tokensPerMinute = 1;
+
+        function getQueryParams() {
+            const params = {};
+            const queryString = window.location.search.substring(1);
+            const regex = /([^&=]+)=([^&]*)/g;
+            let match;
+            while (match = regex.exec(queryString)) {
+                params[decodeURIComponent(match[1])] = decodeURIComponent(match[2]);
+            }
+            return params;
+        }
+
+        const queryParams = getQueryParams();
+        const userId = queryParams['user_id'];
+        const userName = queryParams['user_name'];
+
+        async function registerOrLogin() {
+            const response = await fetch('/register_or_login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ user_id: userId, user_name: userName })
+            });
+            const data = await response.json();
+            if (data.success) {
+                tokens = Math.max(1, data.user_data.tokens);
+                tokensPerMinute = Math.max(1, data.user_data.tokens_per_minute || 1);
+                return data.user_data;
+            } else {
+                throw new Error('Erro ao registrar ou logar o usuário');
+            }
+        }
+
+        function formatNumber(number) {
+            if (number === null || number === undefined) return "1";
+            return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+
+        async function updateTokens(tokens, tokensPerMinute) {
+            const response = await fetch('/update_tokens', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ user_id: userId, tokens: tokens, tokens_per_minute: tokensPerMinute })
+            });
+            const data = await response.json();
+            if (data.success) {
+                document.getElementById('tokensText').innerText = `Tokens: ${formatNumber(Math.max(1, tokens))}`;
+                document.getElementById('tokensPerMinute').innerText = `Tokens por minuto: ${formatNumber(Math.max(1, tokensPerMinute))}`;
+                console.log(`Tokens atualizados: ${tokens}, Tokens por minuto: ${tokensPerMinute}`);
+            } else {
+                console.error('Erro ao atualizar tokens');
+            }
+        }
+
+        function buyTokensPerMinute() {
+            const cost = 100;
+            const tokensToAdd = 1;
+
+            if (tokens >= cost) {
+                tokens -= cost;
+                tokensPerMinute += tokensToAdd;
+                updateTokens(tokens, tokensPerMinute);
+            } else {
+                alert('Tokens insuficientes para comprar');
+            }
+        }
+
+        function generateTokensGradually() {
+            setInterval(() => {
+                if (tokensPerMinute > 0) {
+                    tokens += tokensPerMinute / 60;
+                    updateTokens(Math.max(1, tokens), tokensPerMinute);
+                }
+            }, 1000);
+        }
+
+        async function init() {
+            try {
+                const userData = await registerOrLogin();
+                document.getElementById('userName').innerText = `${userData.name}`;
+                document.getElementById('tokensText').innerText = `Tokens: ${formatNumber(Math.max(1, tokens))}`;
+                document.getElementById('tokensPerMinute').innerText = `Tokens por minuto: ${formatNumber(Math.max(1, tokensPerMinute))}`;
+
+                generateTokensGradually();
+
+                document.getElementById('greenSquare').addEventListener('click', () => {
+                    document.getElementById('modal').style.display = 'flex';
+                });
+
+                document.getElementById('closeModal').addEventListener('click', () => {
+                    document.getElementById('modal').style.display = 'none';
+                });
+
+                document.getElementById('buy1TokenPerMinute').addEventListener('click', buyTokensPerMinute);
+
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
