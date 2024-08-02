@@ -4,7 +4,6 @@
     <title>Mini Game</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
-        /* (Mesma estilização fornecida anteriormente) */
         body, html {
             margin: 0;
             padding: 0;
@@ -27,8 +26,8 @@
             flex-direction: column; /* Alinha os elementos verticalmente */
         }
         #blueSquare {
-            width: 70vw;
-            height: 70vw;
+            width: 45vw;
+            height: 45vw;
             background-color: #0000ff;
             position: absolute;
             top: 62%;
@@ -63,26 +62,32 @@
             z-index: 1; /* Ajusta a ordem dos elementos */
         }
         #tokens {
-            position: relative;
-            font-size: 8vw;
+            position: absolute;
+            top: 50%; /* Centraliza verticalmente */
+            left: 50%; /* Centraliza horizontalmente */
+            transform: translate(-50%, -50%); /* Ajusta a centralização exata */
             color: #ffffff;
-            margin-bottom: 20px; /* Adiciona margem abaixo do texto dos tokens */
-            top: -60px; /* Move o texto dos tokens para cima */
+            display: flex;
+            align-items: center;
+            z-index: 1; /* Ajusta a ordem dos elementos */
+            font-size: 8vw;
+        }
+        #tokensPerMinute {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: #ffffff;
             display: flex;
             align-items: center;
             z-index: 1; /* Ajusta a ordem dos elementos */
         }
-        #tokens img {
+        #tokensPerMinute {
+            font-size: 4vw;
+        }
+        #tokens img, #tokensPerMinute img {
             width: 9vw; /* Ajuste o tamanho do logo conforme necessário */
             height: auto;
             margin-right: 10px; /* Espaçamento entre o logo e o texto */
-        }
-        #tokensPerMinute {
-            position: relative;
-            font-size: 4vw;
-            color: #ffffff;
-            margin-top: 10px; /* Adiciona margem acima do texto dos tokens por minuto */
-            z-index: 1; /* Ajusta a ordem dos elementos */
         }
         #modal {
             display: none; /* Esconde o modal inicialmente */
@@ -112,9 +117,23 @@
         }
         #buyTokensPerMinute button {
             padding: 10px 20px;
-            font-size: 2vw;
+            font-size: 1.5vw;
             cursor: pointer;
             margin: 10px;
+        }
+        .token-button {
+            margin: 10px;
+            font-size: 1.5vw;
+            cursor: pointer;
+            padding: 10px 20px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .token-button:hover {
+            background-color: #0056b3;
         }
     </style>
 </head>
@@ -123,9 +142,12 @@
         <div id="userName"></div>
         <div id="tokens">
             <img src="https://cdn.discordapp.com/attachments/1008852458417696889/1268367342287585300/logoo.png?ex=66ac2aa3&is=66aad923&hm=317cc6bceb0ad5279776825fc269d78f93e3f4275b689f42c38c3fcb9b92f03c&" alt="Token Logo"> <!-- Substitua "token_logo_url" pelo URL do logo dos tokens -->
-            <span id="tokensText">Tokens: 0</span>
+            <span id="tokensText">0</span>
         </div>
-        <div id="tokensPerMinute">Tokens por minuto: 0</div>
+        <div id="tokensPerMinute">
+            <img src="https://cdn.discordapp.com/attachments/1008852458417696889/1268367342287585300/logoo.png?ex=66ac2aa3&is=66aad923&hm=317cc6bceb0ad5279776825fc269d78f93e3f4275b689f42c38c3fcb9b92f03c&" alt="Token Logo"> <!-- Substitua "token_logo_url" pelo URL do logo dos tokens -->
+            <span id="tokensPerMinuteText">0</span>
+        </div>
         <div id="blueSquare"></div> <!-- Novo quadrado azul -->
         <div id="greenSquare"></div> <!-- Quadrado verde -->
     </div>
@@ -134,14 +156,24 @@
         <div id="closeModal">X</div>
         <h1>Comprar Tokens por Minuto</h1>
         <div id="buyTokensPerMinute">
-            <p>Preço: 100 tokens por 1 token/minuto</p>
-            <button id="buy1TokenPerMinute">Comprar 1 Token por Minuto</button>
+            <p>Escolha a quantidade:</p>
+            <button class="token-button" data-quantity="1" data-price="100">Comprar 1 Token por Minuto - 100 Tokens</button>
+            <button class="token-button" data-quantity="2" data-price="200">Comprar 2 Tokens por Minuto - 200 Tokens</button>
+            <button class="token-button" data-quantity="3" data-price="300">Comprar 3 Tokens por Minuto - 300 Tokens</button>
+            <button class="token-button" data-quantity="4" data-price="400">Comprar 4 Tokens por Minuto - 400 Tokens</button>
+            <button class="token-button" data-quantity="5" data-price="500">Comprar 5 Tokens por Minuto - 500 Tokens</button>
+            <button class="token-button" data-quantity="6" data-price="600">Comprar 6 Tokens por Minuto - 600 Tokens</button>
         </div>
     </div>
 
     <script>
         let tokens = 0;
         let tokensPerMinute = 0; // Variável para armazenar tokens por minuto
+
+        // Função para formatar números com separadores de milhar
+        function formatNumber(number) {
+            return number.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        }
 
         // Função para obter parâmetros de consulta da URL
         function getQueryParams() {
@@ -171,11 +203,9 @@
             });
             const data = await response.json();
             if (data.success) {
-                tokens = data.user_data.tokens;
-                tokensPerMinute = data.user_data.tokens_per_minute || 0;
-                return data.user_data;
+                return data.user_data; // Dados do usuário retornados
             } else {
-                throw new Error('Erro ao registrar ou logar o usuário');
+                throw new Error('Erro ao registrar ou logar');
             }
         }
 
@@ -190,22 +220,20 @@
             });
             const data = await response.json();
             if (data.success) {
-                document.getElementById('tokensText').innerText = `Tokens: ${Math.floor(tokens)}`;
-                document.getElementById('tokensPerMinute').innerText = `Tokens por minuto: ${Math.floor(tokensPerMinute)}`;
-                console.log(`Tokens atualizados: ${tokens}, Tokens por minuto: ${tokensPerMinute}`);
+                // Atualiza o texto com valores formatados
+                document.getElementById('tokensText').innerText = formatNumber(tokens);
+                document.getElementById('tokensPerMinuteText').innerText = formatNumber(tokensPerMinute);
+                console.log(`Tokens atualizados: ${formatNumber(tokens)}, Tokens por minuto: ${formatNumber(tokensPerMinute)}`);
             } else {
                 console.error('Erro ao atualizar tokens');
             }
         }
 
         // Função para comprar tokens por minuto
-        function buyTokensPerMinute() {
-            const cost = 100;
-            const tokensToAdd = 1;
-
-            if (tokens >= cost) {
-                tokens -= cost;
-                tokensPerMinute += tokensToAdd;
+        function buyTokensPerMinute(quantity, price) {
+            if (tokens >= price) {
+                tokens -= price;
+                tokensPerMinute += quantity;
                 updateTokens(tokens, tokensPerMinute);
             } else {
                 alert('Tokens insuficientes para comprar');
@@ -216,7 +244,7 @@
         function generateTokensGradually() {
             setInterval(() => {
                 if (tokensPerMinute > 0) {
-                    tokens += tokensPerMinute / 60;
+                    tokens += Math.floor(tokensPerMinute / 60); // Incrementa apenas inteiros
                     updateTokens(tokens, tokensPerMinute);
                 }
             }, 1000); // Atualiza a cada segundo
@@ -227,8 +255,8 @@
             try {
                 const userData = await registerOrLogin();
                 document.getElementById('userName').innerText = `${userData.name}`;
-                document.getElementById('tokensText').innerText = `Tokens: ${tokens}`;
-                document.getElementById('tokensPerMinute').innerText = `Tokens por minuto: ${tokensPerMinute}`;
+                document.getElementById('tokensText').innerText = formatNumber(tokens);
+                document.getElementById('tokensPerMinuteText').innerText = formatNumber(tokensPerMinute);
 
                 // Incrementar tokens e salvar no servidor
                 generateTokensGradually();
@@ -241,8 +269,14 @@
                     document.getElementById('modal').style.display = 'none';
                 });
 
-                // Configurar evento de clique para comprar tokens por minuto
-                document.getElementById('buy1TokenPerMinute').addEventListener('click', buyTokensPerMinute);
+                // Configurar eventos de clique para os botões de compra
+                document.querySelectorAll('#buyTokensPerMinute .token-button').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const quantity = parseInt(button.getAttribute('data-quantity'));
+                        const price = parseInt(button.getAttribute('data-price'));
+                        buyTokensPerMinute(quantity, price);
+                    });
+                });
             } catch (error) {
                 console.error(error);
             }
