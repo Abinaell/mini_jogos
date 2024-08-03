@@ -62,15 +62,21 @@
             z-index: 1; /* Ajusta a ordem dos elementos */
         }
         #tokens {
-            position: absolute;
-            top: 50%; /* Centraliza verticalmente */
-            left: 50%; /* Centraliza horizontalmente */
-            transform: translate(-50%, -50%); /* Ajusta a centralização exata */
+            position: relative;
             color: #ffffff;
             display: flex;
             align-items: center;
+            margin-bottom: 20px;
             z-index: 1; /* Ajusta a ordem dos elementos */
+        }
+        #tokens {
             font-size: 8vw;
+            margin-bottom: 0;
+        }
+        #tokens img {
+            width: 9vw; /* Tamanho do logo dos tokens */
+            height: auto;
+            margin-right: 10px; /* Espaçamento entre o logo e o texto */
         }
         #tokensPerMinute {
             position: absolute;
@@ -79,13 +85,11 @@
             color: #ffffff;
             display: flex;
             align-items: center;
+            font-size: 4vw;
             z-index: 1; /* Ajusta a ordem dos elementos */
         }
-        #tokensPerMinute {
-            font-size: 4vw;
-        }
-        #tokens img, #tokensPerMinute img {
-            width: 9vw; /* Ajuste o tamanho do logo conforme necessário */
+        #tokensPerMinute img {
+            width: 6vw; /* Tamanho do logo dos tokens por minuto */
             height: auto;
             margin-right: 10px; /* Espaçamento entre o logo e o texto */
         }
@@ -117,23 +121,9 @@
         }
         #buyTokensPerMinute button {
             padding: 10px 20px;
-            font-size: 1.5vw;
+            font-size: 2vw;
             cursor: pointer;
             margin: 10px;
-        }
-        .token-button {
-            margin: 10px;
-            font-size: 1.5vw;
-            cursor: pointer;
-            padding: 10px 20px;
-            border: none;
-            background-color: #007bff;
-            color: white;
-            border-radius: 5px;
-            transition: background-color 0.3s;
-        }
-        .token-button:hover {
-            background-color: #0056b3;
         }
     </style>
 </head>
@@ -156,19 +146,17 @@
         <div id="closeModal">X</div>
         <h1>Comprar Tokens por Minuto</h1>
         <div id="buyTokensPerMinute">
-            <p>Escolha a quantidade:</p>
-            <button class="token-button" data-quantity="1" data-price="100">Comprar 1 Token por Minuto - 100 Tokens</button>
-            <button class="token-button" data-quantity="2" data-price="200">Comprar 2 Tokens por Minuto - 200 Tokens</button>
-            <button class="token-button" data-quantity="3" data-price="300">Comprar 3 Tokens por Minuto - 300 Tokens</button>
-            <button class="token-button" data-quantity="4" data-price="400">Comprar 4 Tokens por Minuto - 400 Tokens</button>
-            <button class="token-button" data-quantity="5" data-price="500">Comprar 5 Tokens por Minuto - 500 Tokens</button>
-            <button class="token-button" data-quantity="6" data-price="600">Comprar 6 Tokens por Minuto - 600 Tokens</button>
+            <p>Preço: <span id="priceText">100</span> tokens por <span id="tokensPerMinuteValueText">1</span> token/minuto</p>
+            <button id="buyTokenPerMinute">Comprar Token por Minuto</button>
         </div>
     </div>
 
     <script>
         let tokens = 0;
         let tokensPerMinute = 0; // Variável para armazenar tokens por minuto
+        let pricePerTokenMinute = 100; // Preço inicial
+        let tokensPerMinuteValue = 1; // Valor inicial de tokens por minuto
+        let boughtTokenPerMinute = false; // Indica se o token por minuto foi comprado
 
         // Função para formatar números com separadores de milhar
         function formatNumber(number) {
@@ -203,38 +191,54 @@
             });
             const data = await response.json();
             if (data.success) {
-                return data.user_data; // Dados do usuário retornados
+                tokens = data.user_data.tokens;
+                tokensPerMinute = data.user_data.tokens_per_minute || 0;
+                pricePerTokenMinute = data.user_data.price_per_token_minute || 100; // Obtém o preço do servidor
+                tokensPerMinuteValue = data.user_data.tokens_per_minute_value || 1; // Obtém o valor do servidor
+                boughtTokenPerMinute = data.user_data.bought_token_per_minute || false; // Obtém o estado do botão
+                return data.user_data;
             } else {
-                throw new Error('Erro ao registrar ou logar');
+                throw new Error('Erro ao registrar ou logar o usuário');
             }
         }
 
-        // Função para atualizar tokens e tokens por minuto no servidor
-        async function updateTokens(tokens, tokensPerMinute) {
+        // Função para atualizar os tokens no servidor
+        async function updateTokens(tokens, tokensPerMinute, pricePerTokenMinute, tokensPerMinuteValue, boughtTokenPerMinute) {
             const response = await fetch('/update_tokens', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ user_id: userId, tokens: tokens, tokens_per_minute: tokensPerMinute })
+                body: JSON.stringify({ user_id: userId, tokens, tokens_per_minute: tokensPerMinute, price_per_token_minute: pricePerTokenMinute, tokens_per_minute_value: tokensPerMinuteValue, bought_token_per_minute: boughtTokenPerMinute })
             });
             const data = await response.json();
             if (data.success) {
-                // Atualiza o texto com valores formatados
                 document.getElementById('tokensText').innerText = formatNumber(tokens);
                 document.getElementById('tokensPerMinuteText').innerText = formatNumber(tokensPerMinute);
-                console.log(`Tokens atualizados: ${formatNumber(tokens)}, Tokens por minuto: ${formatNumber(tokensPerMinute)}`);
+                document.getElementById('priceText').innerText = formatNumber(pricePerTokenMinute);
+                document.getElementById('tokensPerMinuteValueText').innerText = formatNumber(tokensPerMinuteValue);
             } else {
                 console.error('Erro ao atualizar tokens');
             }
         }
 
-        // Função para comprar tokens por minuto
-        function buyTokensPerMinute(quantity, price) {
-            if (tokens >= price) {
-                tokens -= price;
-                tokensPerMinute += quantity;
-                updateTokens(tokens, tokensPerMinute);
+        // Função para comprar ou upar tokens por minuto
+        function buyOrUpgradeTokensPerMinute() {
+            if (tokens >= pricePerTokenMinute) {
+                tokens -= pricePerTokenMinute;
+                tokensPerMinute += tokensPerMinuteValue;
+
+                if (!boughtTokenPerMinute) {
+                    // Primeira compra
+                    boughtTokenPerMinute = true;
+                    document.getElementById('buyTokenPerMinute').innerText = 'Upar Token por Minuto';
+                } else {
+                    // Upgrade subsequente
+                    pricePerTokenMinute = Math.floor(pricePerTokenMinute * 1.32); // Aumenta o preço em 32%
+                    tokensPerMinuteValue = Math.floor(tokensPerMinuteValue * 1.28); // Aumenta o valor dos tokens por minuto em 28%
+                }
+
+                updateTokens(tokens, tokensPerMinute, pricePerTokenMinute, tokensPerMinuteValue, boughtTokenPerMinute);
             } else {
                 alert('Tokens insuficientes para comprar');
             }
@@ -245,7 +249,7 @@
             setInterval(() => {
                 if (tokensPerMinute > 0) {
                     tokens += Math.floor(tokensPerMinute / 60); // Incrementa apenas inteiros
-                    updateTokens(tokens, tokensPerMinute);
+                    updateTokens(tokens, tokensPerMinute, pricePerTokenMinute, tokensPerMinuteValue, boughtTokenPerMinute);
                 }
             }, 1000); // Atualiza a cada segundo
         }
@@ -257,6 +261,8 @@
                 document.getElementById('userName').innerText = `${userData.name}`;
                 document.getElementById('tokensText').innerText = formatNumber(tokens);
                 document.getElementById('tokensPerMinuteText').innerText = formatNumber(tokensPerMinute);
+                document.getElementById('priceText').innerText = formatNumber(pricePerTokenMinute);
+                document.getElementById('tokensPerMinuteValueText').innerText = formatNumber(tokensPerMinuteValue);
 
                 // Incrementar tokens e salvar no servidor
                 generateTokensGradually();
@@ -269,14 +275,8 @@
                     document.getElementById('modal').style.display = 'none';
                 });
 
-                // Configurar eventos de clique para os botões de compra
-                document.querySelectorAll('#buyTokensPerMinute .token-button').forEach(button => {
-                    button.addEventListener('click', () => {
-                        const quantity = parseInt(button.getAttribute('data-quantity'));
-                        const price = parseInt(button.getAttribute('data-price'));
-                        buyTokensPerMinute(quantity, price);
-                    });
-                });
+                // Configurar evento de clique para comprar ou upar tokens por minuto
+                document.getElementById('buyTokenPerMinute').addEventListener('click', buyOrUpgradeTokensPerMinute);
             } catch (error) {
                 console.error(error);
             }
