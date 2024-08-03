@@ -39,8 +39,8 @@
         #greenSquare {
             width: 30vw;
             height: 30vw;
-            background-color: #00ff00;
-            background-image: url('https://cdn.discordapp.com/attachments/1008852458417696889/1268341169939812444/Gggg.PNG?ex=66ac1243&is=66aac0c3&hm=8a7e35df3bf8aa771e7408b196be766b288ce398ca1b0bed4a146a7ec698e206&'); /* Substitua 'texture_url' pela URL da sua textura */
+            background-color: #00ff0000;
+            background-image: url('https://raw.githubusercontent.com/Abinaell/mini_jogos/main/4.png'); /* Substitua 'texture_url' pela URL da sua textura */
             background-size: cover; /* Faz com que a textura cubra todo o quadrado */
             position: absolute;
             top: 62%;
@@ -62,11 +62,13 @@
             z-index: 1; /* Ajusta a ordem dos elementos */
         }
         #tokens {
-            position: relative;
+            position: absolute;
+            top: 38%;
+            left: 50%;
+            transform: translate(-50%, -50%); /* Centraliza os tokens */
             color: #ffffff;
             display: flex;
             align-items: center;
-            margin-bottom: 20px;
             z-index: 1; /* Ajusta a ordem dos elementos */
         }
         #tokens {
@@ -131,11 +133,11 @@
     <div id="gameCanvas">
         <div id="userName"></div>
         <div id="tokens">
-            <img src="https://cdn.discordapp.com/attachments/1008852458417696889/1268367342287585300/logoo.png?ex=66ac2aa3&is=66aad923&hm=317cc6bceb0ad5279776825fc269d78f93e3f4275b689f42c38c3fcb9b92f03c&" alt="Token Logo"> <!-- Substitua "token_logo_url" pelo URL do logo dos tokens -->
+            <img src="https://raw.githubusercontent.com/Abinaell/mini_jogos/main/logoo.png" alt="Token Logo"> <!-- Substitua "token_logo_url" pelo URL do logo dos tokens -->
             <span id="tokensText">0</span>
         </div>
         <div id="tokensPerMinute">
-            <img src="https://cdn.discordapp.com/attachments/1008852458417696889/1268367342287585300/logoo.png?ex=66ac2aa3&is=66aad923&hm=317cc6bceb0ad5279776825fc269d78f93e3f4275b689f42c38c3fcb9b92f03c&" alt="Token Logo"> <!-- Substitua "token_logo_url" pelo URL do logo dos tokens -->
+            <img src="https://raw.githubusercontent.com/Abinaell/mini_jogos/main/logoo.png" alt="Token Logo"> <!-- Substitua "token_logo_url" pelo URL do logo dos tokens -->
             <span id="tokensPerMinuteText">0</span>
         </div>
         <div id="blueSquare"></div> <!-- Novo quadrado azul -->
@@ -234,7 +236,7 @@
                     document.getElementById('buyTokenPerMinute').innerText = 'Upar Token por Minuto';
                 } else {
                     // Upgrade subsequente
-                    pricePerTokenMinute = Math.floor(pricePerTokenMinute * 1.32); // Aumenta o preço em 32%
+                    pricePerTokenMinute = Math.floor(pricePerTokenMinute * 1.48); // Aumenta o preço em 32%
                     tokensPerMinuteValue = Math.floor(tokensPerMinuteValue * 1.28); // Aumenta o valor dos tokens por minuto em 28%
                 }
 
