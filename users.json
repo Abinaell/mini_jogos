@@ -1,0 +1,16 @@
+{
+    "6492399599": {
+        "id": "6492399599",
+        "name": "Carlos",
+        "tokens": 100
+    },
+    "default_id": {
+        "name": "Usu\u00e1rio",
+        "tokens": 0,
+        "tokens_per_minute": 10000,
+        "price_per_token_minute": 100,
+        "tokens_per_minute_value": 1,
+        "bought_token_per_minute": false,
+        "level": 1
+    }
+}
