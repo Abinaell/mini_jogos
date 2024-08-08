@@ -63,14 +63,14 @@
         #userNameBox {
             background-color: #444;
             width: 50px;
-            height: 50px;
+            height: 50px; /* Tamanho do quadrado */
             border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
-            margin-bottom: 10px;
-            cursor: pointer;
+            margin-bottom: 10px; /* Espaçamento entre o quadrado e o nome */
+            cursor: pointer; /* Adiciona cursor de pointer */
         }
         #userName {
             font-size: 4vw;
@@ -275,103 +275,173 @@
         </div>
     </div>
 
+    <!-- Estrutura do modal de pixels -->
     <div id="pixelModal" style="display: none;">
         <div id="pixelContent">
             <span id="closePixelModal">&times;</span>
             <div id="pixelCanvas"></div>
-            <button class="modalButton" onclick="closePixelModal()">Fechar</button>
+            <input type="color" id="colorPicker" value="#000000" style="margin-bottom: 10px;">
+            <button id="clearCanvas">Limpar</button>
         </div>
     </div>
 
     <script>
-        // Função para abrir o modal de tela cheia
-        function openFullscreenModal() {
+        let tokens = 0;
+        let tokensPerHour = 0;
+        let pricePerTokenHour = 100;
+        let tokensPerHourValue = 1;
+        let boughtTokenPerHour = false;
+        let purchaseConfirmationPending = false;
+        let level = 1;
+        const tokensPerLevel = 25000;
+        let currentColor = '#000000'; // Cor inicial
+
+        function formatNumber(number) {
+            return number.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        }
+
+        function getQueryParams() {
+            const params = {};
+            const queryString = window.location.search;
+            if (queryString) {
+                const urlParams = new URLSearchParams(queryString);
+                for (const [key, value] of urlParams.entries()) {
+                    params[key] = value;
+                }
+            }
+            return params;
+        }
+
+        async function registerOrLogin() {
+            const params = getQueryParams();
+            const userId = params.user_id || 'default_id';
+            const userName = params.user_name || 'Usuário';
+
+            const response = await fetch('/register_or_login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ user_id: userId, user_name: userName })
+            });
+            const data = await response.json();
+            if (data.success) {
+                tokens = data.user_data.tokens || 0;
+                tokensPerHour = data.user_data.tokens_per_hour || 0;
+                pricePerTokenHour = data.user_data.price_per_token_hour || 100;
+                tokensPerHourValue = data.user_data.tokens_per_hour_value || 1;
+                boughtTokenPerHour = data.user_data.bought_token_per_hour || false;
+                level = data.user_data.level || 1;
+                document.getElementById('userNameText').innerText = userName;
+                document.getElementById('tokensText').innerText = formatNumber(tokens);
+                document.getElementById('tokensPerMinuteText').innerText = formatNumber(tokensPerHour);
+                updateLevelBar();
+            } else {
+                console.error('Erro ao registrar ou fazer login:', data.message);
+            }
+        }
+
+        async function updateTokens(tokens, tokensPerHour, pricePerTokenHour, tokensPerHourValue, boughtTokenPerHour, level) {
+            await fetch('/update_user_data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    user_id: userId,
+                    tokens,
+                    tokens_per_hour: tokensPerHour,
+                    price_per_token_hour: pricePerTokenHour,
+                    tokens_per_hour_value: tokensPerHourValue,
+                    bought_token_per_hour: boughtTokenPerHour,
+                    level
+                })
+            });
+        }
+
+        function updateLevelBar() {
+            const progress = Math.min(100, (tokens / (level * tokensPerLevel)) * 100);
+            document.getElementById('levelProgress').style.width = progress + '%';
+        }
+
+        function generateTokens() {
+            tokens += tokensPerHour;
+            document.getElementById('tokensText').innerText = formatNumber(tokens);
+            document.getElementById('tokensPerMinuteText').innerText = formatNumber(tokensPerHour);
+            updateLevelBar();
+        }
+
+        function increaseLevel() {
+            level++;
+            document.getElementById('levelText').innerText = `Nível ${level}`;
+        }
+
+        async function buyTokenPerHour() {
+            if (tokens >= pricePerTokenHour) {
+                tokens -= pricePerTokenHour;
+                tokensPerHour += tokensPerHourValue;
+                pricePerTokenHour = Math.ceil(pricePerTokenHour * 1.28);
+                tokensPerHourValue *= 2;
+                boughtTokenPerHour = true;
+                document.getElementById('tokensText').innerText = formatNumber(tokens);
+                document.getElementById('tokensPerMinuteText').innerText = formatNumber(tokensPerHour);
+                await updateTokens(tokens, tokensPerHour, pricePerTokenHour, tokensPerHourValue, boughtTokenPerHour, level);
+            }
+        }
+
+        document.getElementById('greenSquare').addEventListener('click', async () => {
             document.getElementById('fullscreenModal').style.display = 'flex';
-        }
+        });
 
-        // Função para fechar o modal de tela cheia
-        function closeFullscreenModal() {
+        document.getElementById('closeModal').addEventListener('click', () => {
             document.getElementById('fullscreenModal').style.display = 'none';
-        }
+        });
 
-        // Função para abrir o modal de pixels
+        window.addEventListener('click', (event) => {
+            if (event.target === document.getElementById('fullscreenModal')) {
+                document.getElementById('fullscreenModal').style.display = 'none';
+            }
+        });
+
+        document.getElementById('userNameBox').addEventListener('click', openPixelModal);
+
         function openPixelModal() {
             document.getElementById('pixelModal').style.display = 'flex';
-            createPixelGrid(); // Gera a grade de pixels quando o modal é aberto
+            generatePixelCanvas();
         }
 
-        // Função para fechar o modal de pixels
-        function closePixelModal() {
-            document.getElementById('pixelModal').style.display = 'none';
-        }
-
-        // Função para criar a grade de pixels
-        function createPixelGrid() {
+        function generatePixelCanvas() {
             const pixelCanvas = document.getElementById('pixelCanvas');
             pixelCanvas.innerHTML = ''; // Limpa o canvas de pixels
 
-            for (let i = 0; i < 256; i++) { // 16x16 pixels
+            for (let i = 0; i < 256; i++) { // Gera 256 pixels (16x16)
                 const pixel = document.createElement('div');
-                pixel.className = 'pixel';
-                pixel.style.width = `${pixelCanvas.clientWidth / 16}px`; // Ajusta o tamanho do pixel
-                pixel.style.height = pixel.style.width; // Mantém a proporção quadrada
-                pixel.onclick = function() {
-                    pixel.style.backgroundColor = '#ff0000'; // Muda a cor do pixel ao clicar
-                };
+                pixel.classList.add('pixel');
+                pixel.addEventListener('click', () => {
+                    pixel.style.backgroundColor = currentColor; // Muda a cor do pixel ao clicar
+                });
                 pixelCanvas.appendChild(pixel);
             }
         }
 
-        // Inicialização da tela
-        document.addEventListener('DOMContentLoaded', function() {
-            fetchUserData();
+        document.getElementById('closePixelModal').addEventListener('click', () => {
+            document.getElementById('pixelModal').style.display = 'none';
         });
 
-        // Função para buscar dados do usuário
-        function fetchUserData() {
-            fetch('/register_or_login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token: getTokenFromLocalStorage() }) // Obtém o token da função fictícia
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('userNameText').innerText = data.username;
-                    document.getElementById('tokensText').innerText = formatNumber(data.tokens);
-                    document.getElementById('tokensPerMinuteText').innerText = formatNumber(data.tokensPerMinute);
-                    document.getElementById('levelText').innerText = `Nível ${data.level}`;
-                    updateLevelBar(data.tokensPerMinute);
-                } else {
-                    console.error('Erro ao buscar dados do usuário');
-                }
-            })
-            .catch(error => console.error('Erro:', error));
-        }
+        document.getElementById('clearCanvas').addEventListener('click', () => {
+            const pixels = document.querySelectorAll('.pixel');
+            pixels.forEach(pixel => {
+                pixel.style.backgroundColor = '#ffffff'; // Limpa todos os pixels
+            });
+        });
 
-        // Função para atualizar a barra de nível
-        function updateLevelBar(tokensPerMinute) {
-            const levelProgress = document.getElementById('levelProgress');
-            const progress = Math.min(100, (tokensPerMinute / 25000) * 100);
-            levelProgress.style.width = progress + '%';
-        }
+        document.getElementById('colorPicker').addEventListener('input', (event) => {
+            currentColor = event.target.value; // Atualiza a cor atual
+        });
 
-        // Função para formatar números com separadores de milhar
-        function formatNumber(number) {
-            return number.toLocaleString('pt-BR');
-        }
+        registerOrLogin().catch(console.error);
 
-        // Função fictícia para obter token do armazenamento local
-        function getTokenFromLocalStorage() {
-            return localStorage.getItem('token') || 'default_token';
-        }
-
-        // Adiciona o evento de fechamento do modal
-        document.getElementById('closeModal').onclick = closeFullscreenModal;
-        document.getElementById('closePixelModal').onclick = closePixelModal;
-
-        // Adiciona o evento de clique no botão de abrir o modal
-        document.getElementById('greenSquare').onclick = openFullscreenModal;
+        setInterval(generateTokens, 1000);
     </script>
 </body>
 </html>
