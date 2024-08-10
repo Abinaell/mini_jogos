@@ -266,57 +266,50 @@
 </head>
 <body>
     <div id="gameCanvas">
-        <div id="userName"><strong></strong></div>
-        <div id="tokens">
-            <img src="https://raw.githubusercontent.com/Abinaell/mini_jogos/main/logoo.png" alt="Token Logo">
-            <span id="tokensText">0</span>
-        </div>
-        <div id="tokensPerMinuteWrapper">
-            <div id="minerandoText">Minerando por hora</div>
-            <div id="tokensPerMinute">
-                <img src="https://raw.githubusercontent.com/Abinaell/mini_jogos/main/logoo.png" alt="Token Logo">
-                <span id="tokensPerMinuteText">0</span>
+        <h1>Mini Game</h1>
+        <div id="userInfo">
+            <p id="userName"></p>
+            <p>Tokens: <span id="tokensText">0</span></p>
+            <p>Produção por Hora: <span id="tokensPerMinuteText">0</span></p>
+            <p id="levelText">Nível 1</p>
+            <div style="background-color: #4caf50; height: 20px; width: 100%; border-radius: 5px; position: relative;">
+                <div id="levelProgress" style="background-color: #2196F3; height: 100%; width: 0%; border-radius: 5px;"></div>
             </div>
         </div>
-        <div id="levelBar">
-            <div id="levelProgress"></div>
-        </div>
-        <div id="levelText">Nível 1</div>
-        <div id="blueSquare"></div>
-        <div id="greenSquare"></div>
+        <button id="blueSquare">Mineração</button>
+        <button id="greenSquare">Comprar Tokens</button>
     </div>
 
-    <div id="modal">
-        <div id="closeModal">X</div>
-        <h1>Mineração</h1>
-        <p>Você minerou <span id="minedTokens">0</span> tokens!</p>
+    <div id="modal" class="modal-content">
+        <h2>Mineração</h2>
+        <p id="minedTokens">Tokens Minerados: 0</p>
+        <button id="closeModal">Fechar</button>
     </div>
 
-    <div id="purchaseModal">
-        <div id="closePurchaseModal">X</div>
-        <h1>Comprar Tokens por Hora</h1>
-        <div id="purchaseContent">
-            <p>Cada token por hora custa <strong id="tokenPrice">100</strong> tokens.</p>
-            <div class="buttonContainer" id="buyTokensPerMinute"></div>
-        </div>
+    <div id="purchaseModal" class="modal-content">
+        <h2>Comprar Tokens</h2>
+        <div id="buyTokensPerMinute"></div>
+        <button id="closePurchaseModal">Fechar</button>
     </div>
 
-    <div id="confirmPurchaseModal">
-        <div id="closeConfirmPurchaseModal">X</div>
-        <h1>Confirmação de Compra</h1>
+    <div id="confirmPurchaseModal" class="modal-content">
+        <h2>Confirmação de Compra</h2>
         <p id="purchaseConfirmationText"></p>
-        <button id="confirmPurchase">Confirmar Compra</button>
+        <button id="confirmPurchase">Confirmar</button>
+        <button id="closeConfirmPurchaseModal">Cancelar</button>
     </div>
 
     <script>
         // Configuração do Firebase
         const firebaseConfig = {
-            apiKey: "AIzaSyAaBhGJRNvRCR10W4Gq3EcCl2TsL3WQMAM",
+            apiKey: "AIzaSyAaBhGJRNvRCR10W4Gq3EcCl2TsL3LQMAM",
             authDomain: "sem-nome-67842.firebaseapp.com",
+            databaseURL: "https://sem-nome-67842-default-rtdb.firebaseio.com",
             projectId: "sem-nome-67842",
             storageBucket: "sem-nome-67842.appspot.com",
             messagingSenderId: "89506692234",
-            appId: "1:89506692234:web:f5c71e3b97c401d99e4173"
+            appId: "1:89506692234:web:f5c71e3b97c401d99e4173",
+            measurementId: "G-Y3811R0ZLX"
         };
 
         // Inicializar Firebase
@@ -370,10 +363,11 @@
             }
 
             // Recupera os dados do usuário
-            const userData = doc.data();
-            tokens = userData.tokens || 0;
-            tokensPerHour = userData.tokens_per_hour || 0;
-            level = userData.level || 1;
+            const userData = await userRef.get();
+            const userDataDoc = userData.data();
+            tokens = userDataDoc.tokens || 0;
+            tokensPerHour = userDataDoc.tokens_per_hour || 0;
+            level = userDataDoc.level || 1;
 
             document.getElementById('userName').innerText = userName;
             document.getElementById('tokensText').innerText = formatNumber(tokens);
@@ -453,41 +447,46 @@
             for (let i = 1; i <= 5; i++) {
                 const button = document.createElement('button');
                 button.className = 'tokenButton';
-                button.innerHTML = `<img src="https://raw.githubusercontent.com/Abinaell/mini_jogos/main/logoo.png" alt="Token Logo">Comprar ${i} Token(s) por Hora`;
-                button.onclick = () => openConfirmPurchaseModal(i);
+                button.innerHTML = `<img src="https://raw.githubusercontent.com/Abinaell/sem-nome/main/assets/tokens.png" alt="Token" style="width: 20px;"> ${i * 100} Tokens`;
+                button.onclick = () => openConfirmPurchaseModal(i * 100);
                 buttonContainer.appendChild(button);
             }
         }
 
         async function confirmPurchase(tokensToBuy) {
-            if (tokens >= tokensToBuy * 100) { // Preço de cada token
-                tokens -= tokensToBuy * 100;
-                tokensPerHour += tokensToBuy;
+            const userRef = db.collection('users').doc(userId);
+            const userData = await userRef.get();
+            const userDataDoc = userData.data();
+
+            if (userDataDoc.tokens >= tokensToBuy) {
+                tokens -= tokensToBuy;
+                tokensPerHour += 1; // Aumenta a produção por hora
+                await userRef.update({
+                    tokens: tokens,
+                    tokens_per_hour: tokensPerHour,
+                    bought_token_per_hour: true
+                });
                 document.getElementById('tokensText').innerText = formatNumber(tokens);
                 document.getElementById('tokensPerMinuteText').innerText = formatNumber(tokensPerHour);
                 closeConfirmPurchaseModal();
-                updateTokensInFirestore();
             } else {
-                alert('Tokens insuficientes!');
+                alert('Você não tem tokens suficientes para realizar esta compra.');
             }
         }
 
-        function init() {
-            try {
-                registerUser();
-                startMining();
-            } catch (error) {
-                console.error('Erro ao inicializar o jogo:', error);
-            }
+        document.getElementById('blueSquare').onclick = () => {
+            openModal();
+            startMining();
+        };
 
-            document.getElementById('blueSquare').onclick = openModal;
-            document.getElementById('closeModal').onclick = closeModal;
-            document.getElementById('greenSquare').onclick = openPurchaseModal;
-            document.getElementById('closePurchaseModal').onclick = closePurchaseModal;
-            document.getElementById('closeConfirmPurchaseModal').onclick = closeConfirmPurchaseModal;
-        }
+        document.getElementById('greenSquare').onclick = () => openPurchaseModal();
 
-        init();
+        document.getElementById('closeModal').onclick = () => closeModal();
+        document.getElementById('closePurchaseModal').onclick = () => closePurchaseModal();
+        document.getElementById('closeConfirmPurchaseModal').onclick = () => closeConfirmPurchaseModal();
+
+        // Inicializa o jogo
+        registerUser();
     </script>
 </body>
 </html>
