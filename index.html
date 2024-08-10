@@ -1,10 +1,14 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Mini Game</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js"></script>
     <style>
-        body, html {
+        body,
+        html {
             margin: 0;
             padding: 0;
             width: 100%;
@@ -16,6 +20,7 @@
             font-family: Arial, sans-serif;
             overflow: hidden;
         }
+
         #gameCanvas {
             width: 100%;
             height: 100%;
@@ -25,6 +30,7 @@
             position: relative;
             flex-direction: column;
         }
+
         #blueSquare {
             width: 45vw;
             height: 45vw;
@@ -36,6 +42,7 @@
             z-index: 1;
             animation: spin 5s linear infinite;
         }
+
         #greenSquare {
             width: 30vw;
             height: 30vw;
@@ -49,35 +56,27 @@
             z-index: 2;
             cursor: pointer;
         }
+
         @keyframes spin {
-            from { transform: translate(-50%, -50%) rotate(0deg); }
-            to { transform: translate(-50%, -50%) rotate(360deg); }
+            from {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+
+            to {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
         }
-        #userNameWrapper {
+
+        #userName {
             position: absolute;
             top: 10px;
-            left: 20px;
-            text-align: center;
-            z-index: 1;
-        }
-        #userNameBox {
-            background-color: #444;
-            width: 50px;
-            height: 50px; /* Tamanho do quadrado */
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            margin-bottom: 10px; /* Espaçamento entre o quadrado e o nome */
-            cursor: pointer; /* Adiciona cursor de pointer */
-        }
-        #userName {
+            left: 10px;
             font-size: 4vw;
             color: #ffffff;
+            z-index: 1;
             font-weight: bold;
-            text-align: center;
         }
+
         #tokens {
             position: absolute;
             top: 38%;
@@ -88,16 +87,19 @@
             align-items: center;
             z-index: 1;
         }
+
         #tokens {
             font-size: 8vw;
             margin-bottom: 0;
             font-weight: bold;
         }
+
         #tokens img {
             width: 9vw;
             height: auto;
             margin-right: 10px;
         }
+
         #tokensPerMinuteWrapper {
             position: absolute;
             top: 10px;
@@ -106,10 +108,12 @@
             color: #ffffff;
             z-index: 1;
         }
+
         #minerandoText {
             font-size: 2.2vw;
             color: #9b1c1c;
         }
+
         #tokensPerMinute {
             font-size: 3vw;
             display: flex;
@@ -118,11 +122,156 @@
             margin-top: 5px;
             font-weight: bold;
         }
+
         #tokensPerMinute img {
             width: 4.5vw;
             height: auto;
             margin-right: 5px;
         }
+
+        #modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgb(0, 0, 0);
+            justify-content: center;
+            align-items: center;
+            z-index: 3;
+            flex-direction: column;
+            color: white;
+            font-size: 2vw;
+            font-weight: bold;
+        }
+
+        #closeModal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 10vw;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #purchaseModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgb(0, 0, 0);
+            justify-content: center;
+            align-items: center;
+            z-index: 4;
+            flex-direction: column;
+            color: white;
+            font-size: 2vw;
+            font-weight: bold;
+        }
+
+        #closePurchaseModal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 10vw;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #confirmPurchaseModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgb(0, 0, 0);
+            justify-content: center;
+            align-items: center;
+            z-index: 5;
+            flex-direction: column;
+            color: white;
+            font-size: 2vw;
+            font-weight: bold;
+        }
+
+        #closeConfirmPurchaseModal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 10vw;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #buyTokensPerMinute {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        #buyTokensPerMinute .buttonContainer {
+            display: flex;
+            overflow-x: auto;
+            /* Allow horizontal scrolling */
+            padding: 10px 0;
+        }
+
+        .tokenButton {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #4CAF50;
+            /* Default color for Buy button */
+            padding: 10px;
+            margin: 10px;
+            border-radius: 10px;
+            /* Slightly rounded corners */
+            border: none;
+            color: #fff;
+            font-weight: bold;
+            width: 120px;
+            /* Set a fixed width */
+            cursor: pointer;
+            position: relative;
+        }
+
+        .tokenButton img {
+            width: 60%;
+            /* Set a width for the button image */
+            height: auto;
+            position: absolute;
+            top: -20px;
+            /* Position the image above the button */
+        }
+
+        #purchaseContent {
+            text-align: center;
+        }
+
+        #purchaseContent img {
+            width: 40vw;
+            height: auto;
+            margin-bottom: 10px;
+        }
+
+        #confirmPurchase {
+            background-color: #008CBA;
+            /* Default color for Confirm button */
+            padding: 10px 20px;
+            font-size: 2vw;
+            cursor: pointer;
+            margin-top: 20px;
+            border-radius: 10px;
+            /* Slightly rounded corners */
+            border: none;
+            color: #fff;
+            font-weight: bold;
+        }
+
         #levelBar {
             position: absolute;
             top: 5%;
@@ -134,12 +283,14 @@
             transform: translate(-50%, -50%);
             z-index: 1;
         }
+
         #levelProgress {
             height: 100%;
             background-color: #ffffff;
             border-radius: 2px;
             width: 0;
         }
+
         #levelText {
             position: absolute;
             top: 2%;
@@ -150,85 +301,16 @@
             z-index: 2;
             font-weight: bold;
         }
+
         strong {
             font-weight: bold;
         }
-        /* Estilos do modal */
-        #fullscreenModal, #pixelModal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        #modalContent, #pixelContent {
-            background-color: #ffffff;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            position: relative;
-            width: 80%;
-            max-width: 800px;
-            overflow-y: auto;
-            max-height: 90%;
-        }
-        #closeModal, #closePixelModal {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            font-size: 2em;
-            cursor: pointer;
-        }
-        .modalImage {
-            width: 100%;
-            max-width: 150px;
-            height: auto;
-            margin: 10px 0;
-        }
-        .modalDescription {
-            font-size: 1em;
-            margin: 10px 0;
-            color: #333;
-        }
-        .modalButton {
-            display: block;
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            background-color: #007bff;
-            color: #ffffff;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1em;
-        }
-        /* Estilos para o modal de pixels */
-        #pixelCanvas {
-            display: grid;
-            grid-template-columns: repeat(16, 1fr); /* 16 colunas */
-            gap: 1px;
-            margin-bottom: 20px;
-            background-color: #ccc;
-            width: 100%; /* Ajusta para preencher a largura do modal */
-            aspect-ratio: 1; /* Mantém a proporção quadrada */
-        }
-        .pixel {
-            background-color: #ffffff;
-            cursor: pointer;
-        }
     </style>
 </head>
+
 <body>
     <div id="gameCanvas">
-        <div id="userNameWrapper">
-            <div id="userNameBox"></div>
-            <div id="userName" onclick="openPixelModal()"><strong id="userNameText"></strong></div>
-        </div>
+        <div id="userName"><strong></strong></div>
         <div id="tokens">
             <img src="https://raw.githubusercontent.com/Abinaell/mini_jogos/main/logoo.png" alt="Token Logo">
             <span id="tokensText">0</span>
@@ -246,151 +328,212 @@
         <div id="levelText">Nível 1</div>
         <div id="blueSquare"></div>
         <div id="greenSquare"></div>
-    </div>
-
-    <!-- Estrutura do modal -->
-    <div id="fullscreenModal" style="display: none;">
-        <div id="modalContent">
-            <span id="closeModal">&times;</span>
-            <!-- Adicione aqui as imagens, descrições e botões do modal -->
-            <img src="https://via.placeholder.com/150" alt="Imagem 1" class="modalImage">
-            <div class="modalDescription">Descrição da Imagem 1</div>
-            <button class="modalButton">Botão 1</button>
-            <img src="https://via.placeholder.com/150" alt="Imagem 2" class="modalImage">
-            <div class="modalDescription">Descrição da Imagem 2</div>
-            <button class="modalButton">Botão 2</button>
-            <img src="https://via.placeholder.com/150" alt="Imagem 3" class="modalImage">
-            <div class="modalDescription">Descrição da Imagem 3</div>
-            <button class="modalButton">Botão 3</button>
-            <img src="https://via.placeholder.com/150" alt="Imagem 4" class="modalImage">
-            <div class="modalDescription">Descrição da Imagem 4</div>
-            <button class="modalButton">Botão 4</button>
+        <div id="modal">
+            <div id="closeModal">✖</div>
+            <div id="buyTokensPerMinute">
+                <div class="buttonContainer">
+                    <button class="tokenButton" id="buyTokenPerMinute1" data-price="100" data-value="1">Comprar<br>1 Token/hora</button>
+                    <button class="tokenButton" id="buyTokenPerMinute2" data-price="500" data-value="5">Comprar<br>5 Tokens/hora</button>
+                    <button class="tokenButton" id="buyTokenPerMinute3" data-price="2500" data-value="10">Comprar<br>10 Tokens/hora</button>
+                    <button class="tokenButton" id="buyTokenPerMinute4" data-price="5000" data-value="20">Comprar<br>20 Tokens/hora</button>
+                </div>
+            </div>
         </div>
-    </div>
-
-    <!-- Estrutura do modal de pixels -->
-    <div id="pixelModal" style="display: none;">
-        <div id="pixelContent">
-            <span id="closePixelModal">&times;</span>
-            <div id="pixelCanvas"></div>
-            <button class="modalButton" onclick="openPixelModal()">Criar Pixel</button>
+        <div id="confirmPurchaseModal">
+            <div id="closeConfirmPurchaseModal">✖</div>
+            <div id="purchaseContent">
+                <img src="https://raw.githubusercontent.com/Abinaell/mini_jogos/main/logoo.png" alt="Token Logo">
+                <div>
+                    <strong>Você está prestes a comprar</strong>
+                </div>
+                <div id="confirmTokensValue">0</div>
+                <div>
+                    <strong>por</strong>
+                </div>
+                <div id="confirmTokensPrice">0</div>
+                <button id="confirmPurchaseButton">Confirmar Compra</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // Função para abrir o modal
-        function openFullscreenModal() {
-            document.getElementById('fullscreenModal').style.display = 'flex';
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAaBhGJRNvRCR10W4Gq3EcCl2TsL3WQMAM",
+            authDomain: "sem-nome-67842.firebaseapp.com",
+            projectId: "sem-nome-67842",
+            storageBucket: "sem-nome-67842.appspot.com",
+            messagingSenderId: "89506692234",
+            appId: "1:89506692234:web:f5c71e3b97c401d99e4173",
+            measurementId: "G-Y3811R0ZLX"
+        };
+
+        // Inicializando o Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let tokens = 0;
+        let tokensPerHour = 0;
+        let pricePerTokenHour = 100;
+        let tokensPerHourValue = 1;
+        let boughtTokenPerHour = false;
+        let purchaseConfirmationPending = false;
+        let level = 1;
+        const tokensPerLevel = 25000;
+        let selectedButtonPrice = 0;
+        let selectedButtonValue = 0;
+
+        function formatNumber(number) {
+            return number.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
         }
 
-        function closeFullscreenModal() {
-            document.getElementById('fullscreenModal').style.display = 'none';
+        const queryParams = new URLSearchParams(window.location.search);
+        const userId = queryParams.get('user_id');
+        const userName = queryParams.get('user_name');
+
+        if (!userId || !userName) {
+            console.error('user_id ou user_name não foram definidos na URL.');
         }
 
-        function openPixelModal() {
-            document.getElementById('pixelModal').style.display = 'flex';
-            createPixelCanvas();
-        }
+        async function registerOrLogin() {
+            const userDoc = db.collection('users').doc(userId);
+            const doc = await userDoc.get();
 
-        function closePixelModal() {
-            document.getElementById('pixelModal').style.display = 'none';
-        }
-
-        document.getElementById('closeModal').addEventListener('click', closeFullscreenModal);
-        document.getElementById('closePixelModal').addEventListener('click', closePixelModal);
-
-        function createPixelCanvas() {
-            const canvas = document.getElementById('pixelCanvas');
-            canvas.innerHTML = ''; // Limpa o canvas existente
-            for (let i = 0; i < 256; i++) {
-                const pixel = document.createElement('div');
-                pixel.className = 'pixel';
-                pixel.style.width = '6%'; // Ajusta o tamanho do pixel
-                pixel.style.height = '6%'; // Ajusta o tamanho do pixel
-                canvas.appendChild(pixel);
+            if (doc.exists) {
+                const data = doc.data();
+                tokens = data.tokens || 0;
+                tokensPerHour = data.tokens_per_hour || 0;
+                pricePerTokenHour = data.price_per_token_hour || 100;
+                tokensPerHourValue = data.tokens_per_hour_value || 1;
+                boughtTokenPerHour = data.bought_token_per_hour || false;
+                level = data.level || 1;
+            } else {
+                // Se o usuário não existir, crie um novo
+                await userDoc.set({
+                    user_name: userName,
+                    tokens: 0,
+                    tokens_per_hour: 0,
+                    price_per_token_hour: 100,
+                    tokens_per_hour_value: 1,
+                    bought_token_per_hour: false,
+                    level: 1
+                });
             }
         }
 
-        // Função para formatar números
-        function formatNumber(num) {
-            if (num >= 1e12) return (num / 1e12).toFixed(2) + 't';
-            if (num >= 1e9) return (num / 1e9).toFixed(2) + 'b';
-            if (num >= 1e6) return (num / 1e6).toFixed(2) + 'm';
-            if (num >= 1e3) return (num / 1e3).toFixed(2) + 'k';
-            return num;
+        async function updateTokens() {
+            const userDoc = db.collection('users').doc(userId);
+            await userDoc.update({
+                tokens,
+                tokens_per_hour: tokensPerHour,
+                price_per_token_hour: pricePerTokenHour,
+                tokens_per_hour_value: tokensPerHourValue,
+                bought_token_per_hour: boughtTokenPerHour,
+                level
+            });
         }
 
-        // Atualiza os dados do usuário
-        async function registerOrLogin() {
-            const params = getQueryParams();
-            const userId = params.user_id || 'default_id';
-            const userName = params.user_name || 'Usuário';
+        async function buyOrUpgradeTokensPerHour(button) {
+            selectedButtonPrice = parseInt(button.getAttribute('data-price'));
+            selectedButtonValue = parseInt(button.getAttribute('data-value'));
 
-            const response = await fetch('http://localhost:8000/register_or_login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ user_id: userId, user_name: userName })
-            });
-            const data = await response.json();
-            if (data.success) {
-                tokens = data.user_data.tokens || 0;
-                tokensPerHour = data.user_data.tokens_per_hour || 0;
-                pricePerTokenHour = data.user_data.price_per_token_hour || 100;
-                tokensPerHourValue = data.user_data.tokens_per_hour_value || 1;
-                boughtTokenPerHour = data.user_data.bought_token_per_hour || false;
-                level = data.user_data.level || 1;
-                document.getElementById('userNameText').innerText = userName;
+            if (tokens >= selectedButtonPrice) {
+                document.getElementById('modal').style.display = 'none';
+                document.getElementById('confirmPurchaseModal').style.display = 'flex';
+                document.getElementById('confirmTokensValue').innerText = selectedButtonValue;
+                document.getElementById('confirmTokensPrice').innerText = selectedButtonPrice;
+                purchaseConfirmationPending = true;
+            } else {
+                alert('Você não tem tokens suficientes para esta compra.');
+            }
+        }
+
+        async function confirmPurchase() {
+            if (purchaseConfirmationPending) {
+                tokens -= selectedButtonPrice;
+                tokensPerHour += selectedButtonValue;
+
+                if (!boughtTokenPerHour) {
+                    boughtTokenPerHour = true;
+                    document.getElementById('buyTokenPerMinute1').innerText = 'Upar Token por Hora';
+                } else {
+                    pricePerTokenHour = Math.floor(pricePerTokenHour * 1.32);
+                    tokensPerHourValue = Math.floor(tokensPerHourValue * 1.28);
+                }
+
+                const newLevel = Math.floor(tokensPerHour / tokensPerLevel) + 1;
+                if (newLevel !== level) {
+                    level = newLevel;
+                    document.getElementById('levelText').innerText = `Nível ${level}`;
+                }
+
+                await updateTokens();
                 document.getElementById('tokensText').innerText = formatNumber(tokens);
                 document.getElementById('tokensPerMinuteText').innerText = formatNumber(tokensPerHour);
-                updateLevelBar();
-            } else {
-                console.error('Erro ao registrar ou fazer login:', data.message);
+                document.getElementById('priceText').innerText = formatNumber(pricePerTokenHour);
+                document.getElementById('tokensPerMinuteValueText').innerText = formatNumber(tokensPerHourValue);
+
+                document.getElementById('confirmPurchaseModal').style.display = 'none';
+                purchaseConfirmationPending = false;
+
+                if (navigator.vibrate) {
+                    navigator.vibrate(200);
+                }
             }
-        }
-
-        async function updateTokens(tokens, tokensPerHour, pricePerTokenHour, tokensPerHourValue, boughtTokenPerHour, level) {
-            const params = getQueryParams();
-            const userId = params.user_id || 'default_id';
-
-            await fetch('http://localhost:8000/update_user_data', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    user_id: userId,
-                    tokens,
-                    tokens_per_hour: tokensPerHour,
-                    price_per_token_hour: pricePerTokenHour,
-                    tokens_per_hour_value: tokensPerHourValue,
-                    bought_token_per_hour: boughtTokenPerHour,
-                    level
-                })
-            });
         }
 
         function updateLevelBar() {
-            const progress = document.getElementById('levelProgress');
-            const levelText = document.getElementById('levelText');
-            const levelPercentage = (level - 1) * 25; // Ajuste a lógica conforme necessário
-            progress.style.width = levelPercentage + '%';
-            levelText.innerText = `Nível ${level}`;
+            const progress = Math.min(100, (tokensPerHour % tokensPerLevel) / tokensPerLevel * 100);
+            document.getElementById('levelProgress').style.width = `${progress}%`;
         }
 
-        function getQueryParams() {
-            const params = {};
-            const queryString = window.location.search.substring(1);
-            const queries = queryString.split('&');
-            for (let query of queries) {
-                const [key, value] = query.split('=');
-                params[key] = decodeURIComponent(value);
+        function generateTokensGradually() {
+            setInterval(() => {
+                if (tokensPerHour > 0) {
+                    tokens += Math.floor(tokensPerHour / 24);
+                    updateLevelBar();
+                    updateTokens();
+                    document.getElementById('tokensText').innerText = formatNumber(tokens);
+                }
+            }, 3600000);
+        }
+
+        async function init() {
+            try {
+                await registerOrLogin();
+                document.getElementById('userName').innerText = userName;
+                document.getElementById('tokensText').innerText = formatNumber(tokens);
+                document.getElementById('tokensPerMinuteText').innerText = formatNumber(tokensPerHour);
+                document.getElementById('levelText').innerText = `Nível ${level}`;
+                updateLevelBar();
+                generateTokensGradually();
+
+                document.getElementById('greenSquare').addEventListener('click', () => {
+                    document.getElementById('modal').style.display = 'flex';
+                });
+
+                document.getElementById('closeModal').addEventListener('click', () => {
+                    document.getElementById('modal').style.display = 'none';
+                });
+
+                document.getElementById('buyTokenPerMinute1').addEventListener('click', (event) => buyOrUpgradeTokensPerHour(event.currentTarget));
+                document.getElementById('buyTokenPerMinute2').addEventListener('click', (event) => buyOrUpgradeTokensPerHour(event.currentTarget));
+                document.getElementById('buyTokenPerMinute3').addEventListener('click', (event) => buyOrUpgradeTokensPerHour(event.currentTarget));
+                document.getElementById('buyTokenPerMinute4').addEventListener('click', (event) => buyOrUpgradeTokensPerHour(event.currentTarget));
+
+                document.getElementById('closeConfirmPurchaseModal').addEventListener('click', () => {
+                    document.getElementById('confirmPurchaseModal').style.display = 'none';
+                    purchaseConfirmationPending = false;
+                });
+
+                document.getElementById('confirmPurchaseButton').addEventListener('click', confirmPurchase);
+            } catch (error) {
+                console.error('Erro ao inicializar o jogo:', error);
             }
-            return params;
         }
 
-        document.addEventListener('DOMContentLoaded', registerOrLogin);
+        init();
     </script>
 </body>
+
 </html>
