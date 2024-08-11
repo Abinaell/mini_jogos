@@ -1,492 +1,100 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Mini Game</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Mini App</title>
     <style>
         body, html {
+            height: 100%;
             margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: #000000;
             font-family: Arial, sans-serif;
-            overflow: hidden;
+            background-color: #f0f0f0;
         }
-        #gameCanvas {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            flex-direction: column;
-        }
-        #blueSquare {
-            width: 45vw;
-            height: 45vw;
-            background-color: #c70000;
-            position: absolute;
-            top: 62%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(0deg);
-            z-index: 1;
-            animation: spin 5s linear infinite;
-        }
-        #greenSquare {
-            width: 30vw;
-            height: 30vw;
-            background-color: #00ff0000;
-            background-image: url('https://raw.githubusercontent.com/Abinaell/mini_jogos/main/Logo%20(1).png');
-            background-size: cover;
-            position: absolute;
-            top: 62%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 2;
-            cursor: pointer;
-        }
-        @keyframes spin {
-            from { transform: translate(-50%, -50%) rotate(0deg); }
-            to { transform: translate(-50%, -50%) rotate(360deg); }
-        }
-        #userName {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            font-size: 4vw;
-            color: #ffffff;
-            z-index: 1;
-            font-weight: bold;
-        }
-        #tokens {
-            position: absolute;
-            top: 38%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #ffffff;
-            display: flex;
-            align-items: center;
-            z-index: 1;
-        }
-        #tokens {
-            font-size: 8vw;
-            margin-bottom: 0;
-            font-weight: bold;
-        }
-        #tokens img {
-            width: 9vw;
-            height: auto;
-            margin-right: 10px;
-        }
-        #tokensPerMinuteWrapper {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            text-align: center;
-            color: #ffffff;
-            z-index: 1;
-        }
-        #minerandoText {
-            font-size: 2.2vw;
-            color: #9b1c1c;
-        }
-        #tokensPerMinute {
-            font-size: 3vw;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-top: 5px;
-            font-weight: bold;
-        }
-        #tokensPerMinute img {
-            width: 4.5vw;
-            height: auto;
-            margin-right: 5px;
-        }
-        #modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgb(0, 0, 0);
-            justify-content: center;
-            align-items: center;
-            z-index: 3;
-            flex-direction: column;
-            color: white;
-            font-size: 2vw;
-            font-weight: bold;
-        }
-        #closeModal {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            font-size: 10vw;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        #purchaseModal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgb(0, 0, 0);
-            justify-content: center;
-            align-items: center;
-            z-index: 4;
-            flex-direction: column;
-            color: white;
-            font-size: 2vw;
-            font-weight: bold;
-        }
-        #closePurchaseModal {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            font-size: 10vw;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        #confirmPurchaseModal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgb(0, 0, 0);
-            justify-content: center;
-            align-items: center;
-            z-index: 5;
-            flex-direction: column;
-            color: white;
-            font-size: 2vw;
-            font-weight: bold;
-        }
-        #closeConfirmPurchaseModal {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            font-size: 10vw;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        #buyTokensPerMinute {
-            margin-top: 20px;
+        .container {
             text-align: center;
         }
-        #buyTokensPerMinute .buttonContainer {
-            display: flex;
-            overflow-x: auto; /* Allow horizontal scrolling */
-            padding: 10px 0;
+        .square {
+            width: 150px;
+            height: 150px;
+            background-color: #007BFF;
+            margin: 20px auto;
         }
-        .tokenButton {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background-color: #4CAF50; /* Default color for Buy button */
+        .form-control {
             padding: 10px;
             margin: 10px;
-            border-radius: 10px; /* Slightly rounded corners */
-            border: none;
-            color: #fff;
-            font-weight: bold;
-            width: 120px; /* Set a fixed width */
-            cursor: pointer;
-            position: relative;
+            width: 100%;
+            max-width: 300px;
         }
-        .tokenButton img {
-            width: 60%; /* Set a width for the button image */
-            height: auto;
-            position: absolute;
-            top: -20px; /* Position the image above the button */
-        }
-        #purchaseContent {
-            text-align: center;
-        }
-        #purchaseContent img {
-            width: 40vw;
-            height: auto;
-            margin-bottom: 10px;
-        }
-        #confirmPurchase {
-            background-color: #008CBA; /* Default color for Confirm button */
+        button {
             padding: 10px 20px;
-            font-size: 2vw;
-            cursor: pointer;
-            margin-top: 20px;
-            border-radius: 10px; /* Slightly rounded corners */
+            background-color: #007BFF;
+            color: white;
             border: none;
-            color: #fff;
-            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
         }
-        #levelBar {
-            position: absolute;
-            top: 5%;
-            left: 50%;
-            width: 50%;
-            height: 7px;
-            background-color: #333;
-            border-radius: 2px;
-            transform: translate(-50%, -50%);
-            z-index: 1;
-        }
-        #levelProgress {
-            height: 100%;
-            background-color: #ffffff;
-            border-radius: 2px;
-            width: 0;
-        }
-        #levelText {
-            position: absolute;
-            top: 2%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #ffffff;
-            font-size: 3vw;
-            z-index: 2;
-            font-weight: bold;
-        }
-        strong {
-            font-weight: bold;
+        button:hover {
+            background-color: #0056b3;
         }
     </style>
 </head>
 <body>
-    <div id="gameCanvas">
-        <h1>Mini Game</h1>
-        <div id="userInfo">
-            <p id="userName"></p>
-            <p>Tokens: <span id="tokensText">0</span></p>
-            <p>Produção por Hora: <span id="tokensPerMinuteText">0</span></p>
-            <p id="levelText">Nível 1</p>
-            <div style="background-color: #4caf50; height: 20px; width: 100%; border-radius: 5px; position: relative;">
-                <div id="levelProgress" style="background-color: #2196F3; height: 100%; width: 0%; border-radius: 5px;"></div>
-            </div>
-        </div>
-        <button id="blueSquare">Mineração</button>
-        <button id="greenSquare">Comprar Tokens</button>
-    </div>
 
-    <div id="modal" class="modal-content">
-        <h2>Mineração</h2>
-        <p id="minedTokens">Tokens Minerados: 0</p>
-        <button id="closeModal">Fechar</button>
-    </div>
+<div class="container">
+    <div class="square"></div>
+    <h2>Login com Telegram</h2>
+    <!-- Telegram Login Widget -->
+    <script async src="https://telegram.org/js/telegram-widget.js?7" 
+        data-telegram-login="SEU_BOT_USERNAME" 
+        data-size="large" 
+        data-auth-url="auth.php" 
+        data-request-access="write"></script>
+    <p id="message"></p>
+</div>
 
-    <div id="purchaseModal" class="modal-content">
-        <h2>Comprar Tokens</h2>
-        <div id="buyTokensPerMinute"></div>
-        <button id="closePurchaseModal">Fechar</button>
-    </div>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
 
-    <div id="confirmPurchaseModal" class="modal-content">
-        <h2>Confirmação de Compra</h2>
-        <p id="purchaseConfirmationText"></p>
-        <button id="confirmPurchase">Confirmar</button>
-        <button id="closeConfirmPurchaseModal">Cancelar</button>
-    </div>
+<script>
+    // Configurações do Firebase
+    const firebaseConfig = {
+        apiKey: "SUA_API_KEY_AQUI",
+        authDomain: "SEU_DOMINIO_FIREBASE.firebaseapp.com",
+        projectId: "SEU_PROJECT_ID",
+        storageBucket: "SEU_STORAGE_BUCKET.appspot.com",
+        messagingSenderId: "SEU_MESSAGING_SENDER_ID",
+        appId: "SEU_APP_ID",
+        databaseURL: "https://SEU_PROJECT_ID.firebaseio.com"
+    };
 
-    <script>
-        // Configuração do Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyAaBhGJRNvRCR10W4Gq3EcCl2TsL3LQMAM",
-            authDomain: "sem-nome-67842.firebaseapp.com",
-            databaseURL: "https://sem-nome-67842-default-rtdb.firebaseio.com",
-            projectId: "sem-nome-67842",
-            storageBucket: "sem-nome-67842.appspot.com",
-            messagingSenderId: "89506692234",
-            appId: "1:89506692234:web:f5c71e3b97c401d99e4173",
-            measurementId: "G-Y3811R0ZLX"
-        };
+    // Inicializa o Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
 
-        // Inicializar Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+    // Função para salvar dados no Firebase após o login com Telegram
+    function saveUserToFirebase(id, firstName, lastName) {
+        firebase.database().ref('users/' + id).set({
+            telegramId: id,
+            firstName: firstName,
+            lastName: lastName
+        }).then(() => {
+            document.getElementById("message").innerText = "Usuário salvo com sucesso!";
+        }).catch((error) => {
+            document.getElementById("message").innerText = "Erro ao salvar usuário: " + error.message;
+        });
+    }
 
-        // Variáveis do jogo
-        let tokens = 0;
-        let userId;
-        let userName;
-        let tokensPerHour = 0;
-        let level = 1;
-        let levelUpTokens = 100; // Tokens necessários para subir de nível
-        let progressWidth = 0;
+    // Callback para o Telegram Login Widget
+    function onTelegramAuth(user) {
+        saveUserToFirebase(user.id, user.first_name, user.last_name);
+    }
+</script>
 
-        function getQueryParams() {
-            const params = {};
-            const queryString = window.location.search.substring(1);
-            const regex = /([^&=]+)=([^&]*)/g;
-            let match;
-            while (match = regex.exec(queryString)) {
-                params[decodeURIComponent(match[1])] = decodeURIComponent(match[2]);
-            }
-            return params;
-        }
-
-        const queryParams = getQueryParams();
-        userId = queryParams['user_id']; // ID do Telegram
-        userName = queryParams['user_name']; // Nome do usuário
-
-        if (!userId || !userName) {
-            console.error('user_id ou user_name não foram definidos na URL.');
-        }
-
-        async function registerUser() {
-            // Verifica se o usuário já existe no Firestore
-            const userRef = db.collection('users').doc(userId);
-            const doc = await userRef.get();
-
-            if (!doc.exists) {
-                // Se o usuário não existir, cria um novo
-                await userRef.set({
-                    user_name: userName,
-                    tokens: 0,
-                    tokens_per_hour: 0,
-                    price_per_token_hour: 100,
-                    tokens_per_hour_value: 1,
-                    bought_token_per_hour: false,
-                    level: 1
-                });
-            }
-
-            // Recupera os dados do usuário
-            const userData = await userRef.get();
-            const userDataDoc = userData.data();
-            tokens = userDataDoc.tokens || 0;
-            tokensPerHour = userDataDoc.tokens_per_hour || 0;
-            level = userDataDoc.level || 1;
-
-            document.getElementById('userName').innerText = userName;
-            document.getElementById('tokensText').innerText = formatNumber(tokens);
-            document.getElementById('tokensPerMinuteText').innerText = formatNumber(tokensPerHour);
-            document.getElementById('levelText').innerText = `Nível ${level}`;
-            progressWidth = (tokens / levelUpTokens) * 100;
-            document.getElementById('levelProgress').style.width = `${progressWidth}%`;
-        }
-
-        function formatNumber(number) {
-            return number.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-        }
-
-        async function updateTokensInFirestore() {
-            const userRef = db.collection('users').doc(userId);
-            await userRef.update({
-                tokens: tokens,
-                tokens_per_hour: tokensPerHour,
-                level: level
-            });
-        }
-
-        function startMining() {
-            setInterval(() => {
-                tokens += tokensPerHour;
-                document.getElementById('tokensText').innerText = formatNumber(tokens);
-                document.getElementById('minedTokens').innerText = formatNumber(tokens);
-                document.getElementById('levelText').innerText = `Nível ${level}`;
-                updateLevel();
-                updateTokensInFirestore();
-            }, 3600000); // Cada hora
-        }
-
-        function updateLevel() {
-            if (tokens >= levelUpTokens) {
-                level++;
-                levelUpTokens *= 2; // Dobrar os tokens necessários para o próximo nível
-                progressWidth = (tokens / levelUpTokens) * 100;
-                document.getElementById('levelProgress').style.width = `${progressWidth}%`;
-                document.getElementById('levelText').innerText = `Nível ${level}`;
-                tokensPerHour++; // Aumenta a produção de tokens por hora
-                document.getElementById('tokensPerMinuteText').innerText = formatNumber(tokensPerHour);
-            }
-        }
-
-        function openModal() {
-            document.getElementById('modal').style.display = 'flex';
-        }
-
-        function closeModal() {
-            document.getElementById('modal').style.display = 'none';
-        }
-
-        function openPurchaseModal() {
-            document.getElementById('purchaseModal').style.display = 'flex';
-            loadTokenPurchaseOptions();
-        }
-
-        function closePurchaseModal() {
-            document.getElementById('purchaseModal').style.display = 'none';
-        }
-
-        function openConfirmPurchaseModal(tokensToBuy) {
-            document.getElementById('purchaseConfirmationText').innerText = `Você deseja comprar ${tokensToBuy} tokens por hora?`;
-            document.getElementById('confirmPurchase').onclick = () => confirmPurchase(tokensToBuy);
-            document.getElementById('confirmPurchaseModal').style.display = 'flex';
-        }
-
-        function closeConfirmPurchaseModal() {
-            document.getElementById('confirmPurchaseModal').style.display = 'none';
-        }
-
-        function loadTokenPurchaseOptions() {
-            const buttonContainer = document.getElementById('buyTokensPerMinute');
-            buttonContainer.innerHTML = '';
-
-            for (let i = 1; i <= 5; i++) {
-                const button = document.createElement('button');
-                button.className = 'tokenButton';
-                button.innerHTML = `<img src="https://raw.githubusercontent.com/Abinaell/sem-nome/main/assets/tokens.png" alt="Token" style="width: 20px;"> ${i * 100} Tokens`;
-                button.onclick = () => openConfirmPurchaseModal(i * 100);
-                buttonContainer.appendChild(button);
-            }
-        }
-
-        async function confirmPurchase(tokensToBuy) {
-            const userRef = db.collection('users').doc(userId);
-            const userData = await userRef.get();
-            const userDataDoc = userData.data();
-
-            if (userDataDoc.tokens >= tokensToBuy) {
-                tokens -= tokensToBuy;
-                tokensPerHour += 1; // Aumenta a produção por hora
-                await userRef.update({
-                    tokens: tokens,
-                    tokens_per_hour: tokensPerHour,
-                    bought_token_per_hour: true
-                });
-                document.getElementById('tokensText').innerText = formatNumber(tokens);
-                document.getElementById('tokensPerMinuteText').innerText = formatNumber(tokensPerHour);
-                closeConfirmPurchaseModal();
-            } else {
-                alert('Você não tem tokens suficientes para realizar esta compra.');
-            }
-        }
-
-        document.getElementById('blueSquare').onclick = () => {
-            openModal();
-            startMining();
-        };
-
-        document.getElementById('greenSquare').onclick = () => openPurchaseModal();
-
-        document.getElementById('closeModal').onclick = () => closeModal();
-        document.getElementById('closePurchaseModal').onclick = () => closePurchaseModal();
-        document.getElementById('closeConfirmPurchaseModal').onclick = () => closeConfirmPurchaseModal();
-
-        // Inicializa o jogo
-        registerUser();
-    </script>
 </body>
 </html>
