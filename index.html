@@ -5,183 +5,166 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Geometric Dash Clone</title>
     <style>
-        body { margin: 0; overflow: hidden; }
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: black;
+        }
+        canvas {
+            display: block;
+        }
     </style>
 </head>
 <body>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
-    <script>
-        let player, obstacles = [], particles = [];
-        let playerSize = 50, playerX = 50, playerY, gravity = 2.6, jumpForce = 0;
-        let isJumping = false, rotationAngle = 0, playerSpeed = 4, cameraX = 0;
-        let score = 0, highScore = 0, groundY, gameActive = true, gameOver = false;
 
-        function setup() {
-            createCanvas(1280, 720);
-            playerY = height - playerSize - 100;
-            groundY = height - 100;
-            textSize(45);
-            textAlign(CENTER, CENTER);
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+<script>
+let player;
+let obstacles = [];
+let score = 0;
+let highScore = 0;
+let isJumping = false;
+let jumpForce = 0;
+let gravity = 2.6;
+let playerSpeed = 4;
+let groundHeight = 100;
+let playerRotation = 0;
+let rotationSpeed = -5.3;
+let gameOver = false;
+let cameraX = 0;
+
+function setup() {
+    createCanvas(1280, 720);
+    player = new Player(50, height - groundHeight - 50, 50, color(255, 255, 0));
+    textSize(45);
+}
+
+function draw() {
+    background(0);
+
+    // Desenhar e atualizar jogador
+    if (!gameOver) {
+        player.update();
+        player.show();
+    }
+
+    // Gerar obstáculos
+    if (frameCount % int(random(30, 100)) === 0) {
+        obstacles.push(new Obstacle(width + cameraX, height - groundHeight - 40, 40));
+    }
+
+    // Desenhar e atualizar obstáculos
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+        obstacles[i].update();
+        obstacles[i].show();
+
+        // Verificar colisão
+        if (player.hits(obstacles[i])) {
+            gameOver = true;
         }
 
-        function draw() {
-            background(0);
-
-            if (gameActive && !gameOver) {
-                if (isJumping) {
-                    playerY += jumpForce;
-                    jumpForce += gravity;
-                    if (playerY > height - playerSize - 100) {
-                        playerY = height - playerSize - 100;
-                        isJumping = false;
-                        jumpForce = 0;
-                    } else {
-                        rotationAngle -= 5.3;
-                    }
-                } else {
-                    playerY += gravity;
-                    if (rotationAngle !== 0) rotationAngle = 0;
-                }
-
-                playerX += playerSpeed;
-                cameraX = playerX - width / 7;
-                generateObstacles();
-                updateObstacles();
-                generateParticles();
-                updateParticles();
-
-                score++;
-            }
-
-            drawGround();
-            drawPlayer();
-            drawObstacles();
-            drawParticles();
-            showScore();
-
-            if (gameOver) showGameOverScreen();
+        // Remover obstáculos fora da tela
+        if (obstacles[i].offscreen()) {
+            obstacles.splice(i, 1);
+            score++;
         }
+    }
 
-        function keyPressed() {
-            if (key == ' ') {
-                if (!isJumping) {
-                    isJumping = true;
-                    jumpForce = -20;
-                }
-            }
-        }
+    // Mostrar pontuação
+    fill(255);
+    text("Score: " + score, 10, 50);
+    text("High Score: " + highScore, width - 250, 50);
 
-        function mousePressed() {
-            if (gameOver && mouseY > height / 2 + 50 && mouseY < height / 2 + 100) {
-                resetGame();
-            } else if (!isJumping) {
-                isJumping = true;
-                jumpForce = -20;
-            }
-        }
+    if (gameOver) {
+        fill(255);
+        textAlign(CENTER);
+        textSize(100);
+        text("Game Over", width / 2, height / 2);
+        textSize(36);
+        text("Clique para reiniciar", width / 2, height / 2 + 100);
+    }
+}
 
-        function resetGame() {
-            playerX = 50;
-            playerY = height - playerSize - 100;
+function mousePressed() {
+    if (gameOver) {
+        gameOver = false;
+        score = 0;
+        player = new Player(50, height - groundHeight - 50, 50, color(255, 255, 0));
+        obstacles = [];
+    } else if (!isJumping) {
+        isJumping = true;
+        jumpForce = -20;
+    }
+}
+
+class Player {
+    constructor(x, y, size, col) {
+        this.x = x;
+        this.y = y;
+        this.size = size;
+        this.col = col;
+        this.gravity = gravity;
+        this.velocity = 0;
+        this.rotation = 0;
+    }
+
+    update() {
+        this.y += this.velocity;
+        this.velocity += this.gravity;
+
+        if (this.y > height - this.size - groundHeight) {
+            this.y = height - this.size - groundHeight;
+            this.velocity = 0;
             isJumping = false;
-            jumpForce = 0;
-            obstacles = [];
-            particles = [];
-            rotationAngle = 0;
-            if (score > highScore) highScore = score;
-            score = 0;
-            gameOver = false;
         }
 
-        function showScore() {
-            fill(255);
-            text(`Score: ${score}`, 100, 50);
-            text(`High Score: ${highScore}`, width - 200, 50);
-        }
+        cameraX = this.x - width / 7;
+    }
 
-        function showGameOverScreen() {
-            fill(255);
-            textSize(100);
-            text("Game Over", width / 2, height / 2 - 50);
-            textSize(36);
-            text("Click to Restart", width / 2, height / 2 + 100);
-        }
+    show() {
+        push();
+        translate(this.x - cameraX, this.y);
+        rotate(radians(this.rotation));
+        fill(this.col);
+        rectMode(CENTER);
+        rect(0, 0, this.size, this.size);
+        pop();
+    }
 
-        function drawGround() {
-            stroke(255);
-            strokeWeight(5);
-            line(0 - cameraX, groundY, width, groundY);
-        }
+    hits(obstacle) {
+        return collideRectRect(this.x, this.y, this.size, this.size, obstacle.x - cameraX, obstacle.y, obstacle.size, obstacle.size);
+    }
+}
 
-        function drawPlayer() {
-            push();
-            translate(playerX - cameraX + playerSize / 2, playerY + playerSize / 2);
-            rotate(radians(rotationAngle));
-            fill(255, 255, 0);
-            rectMode(CENTER);
-            rect(0, 0, playerSize, playerSize);
-            pop();
-        }
+class Obstacle {
+    constructor(x, y, size) {
+        this.x = x;
+        this.y = y;
+        this.size = size;
+    }
 
-        function generateObstacles() {
-            if (frameCount % 60 === 0) {
-                let obstacleSize = 40;
-                let obstacleY = height - obstacleSize - 62;
-                let obstacleX = playerX + width;
-                obstacles.push({x: obstacleX, y: obstacleY, size: obstacleSize});
-            }
-        }
+    update() {
+        this.x -= playerSpeed;
+    }
 
-        function updateObstacles() {
-            obstacles.forEach(obstacle => {
-                obstacle.x -= playerSpeed;
-                if (playerX < obstacle.x + obstacle.size &&
-                    playerX + playerSize > obstacle.x &&
-                    playerY < obstacle.y + obstacle.size &&
-                    playerY + playerSize > obstacle.y) {
-                    gameOver = true;
-                }
-            });
-            obstacles = obstacles.filter(obstacle => obstacle.x - cameraX > 0);
-        }
+    show() {
+        fill(0);
+        stroke(255);
+        strokeWeight(3);
+        push();
+        translate(this.x - cameraX, this.y);
+        triangle(0, this.size, this.size, this.size, this.size / 2, 0);
+        pop();
+    }
 
-        function drawObstacles() {
-            obstacles.forEach(obstacle => {
-                fill(0);
-                stroke(255);
-                strokeWeight(3);
-                beginShape();
-                vertex(obstacle.x - cameraX, obstacle.y);
-                vertex(obstacle.x - cameraX + obstacle.size, obstacle.y);
-                vertex(obstacle.x - cameraX + obstacle.size / 2, obstacle.y - obstacle.size);
-                endShape(CLOSE);
-            });
-        }
+    offscreen() {
+        return this.x - cameraX < -this.size;
+    }
+}
+</script>
 
-        function generateParticles() {
-            if (!isJumping && playerSpeed > 2 && particles.length < 50) {
-                let particleX = playerX + playerSize / 1.4;
-                let particleY = playerY + playerSize / 1.2 + random(-4, 4);
-                particles.push({x: particleX, y: particleY, size: 8, alpha: 255});
-            }
-        }
-
-        function updateParticles() {
-            particles.forEach(particle => {
-                particle.x -= playerSpeed;
-                particle.y += random(-0.4, 0.4);
-                particle.alpha -= 2;
-            });
-            particles = particles.filter(particle => particle.alpha > 0 && particle.x - cameraX > 0);
-        }
-
-        function drawParticles() {
-            particles.forEach(particle => {
-                fill(255, 255, 255, particle.alpha);
-                noStroke();
-                rect(particle.x - cameraX, particle.y, particle.size, particle.size);
-            });
-        }
-    </script>
 </body>
 </html>
