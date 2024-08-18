@@ -3,98 +3,185 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram Mini App</title>
+    <title>Geometric Dash Clone</title>
     <style>
-        body, html {
-            height: 100%;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-        }
-        .container {
-            text-align: center;
-        }
-        .square {
-            width: 150px;
-            height: 150px;
-            background-color: #007BFF;
-            margin: 20px auto;
-        }
-        .form-control {
-            padding: 10px;
-            margin: 10px;
-            width: 100%;
-            max-width: 300px;
-        }
-        button {
-            padding: 10px 20px;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
+        body { margin: 0; overflow: hidden; }
     </style>
 </head>
 <body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <script>
+        let player, obstacles = [], particles = [];
+        let playerSize = 50, playerX = 50, playerY, gravity = 2.6, jumpForce = 0;
+        let isJumping = false, rotationAngle = 0, playerSpeed = 4, cameraX = 0;
+        let score = 0, highScore = 0, groundY, gameActive = true, gameOver = false;
 
-<div class="container">
-    <div class="square"></div>
-    <h2>Login com Telegram</h2>
-    <!-- Telegram Login Widget -->
-    <script async src="https://telegram.org/js/telegram-widget.js?7" 
-        data-telegram-login="SEU_BOT_USERNAME" 
-        data-size="large" 
-        data-auth-url="auth.php" 
-        data-request-access="write"></script>
-    <p id="message"></p>
-</div>
+        function setup() {
+            createCanvas(1280, 720);
+            playerY = height - playerSize - 100;
+            groundY = height - 100;
+            textSize(45);
+            textAlign(CENTER, CENTER);
+        }
 
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
+        function draw() {
+            background(0);
 
-<script>
-    // Configurações do Firebase
-    const firebaseConfig = {
-        apiKey: "SUA_API_KEY_AQUI",
-        authDomain: "SEU_DOMINIO_FIREBASE.firebaseapp.com",
-        projectId: "SEU_PROJECT_ID",
-        storageBucket: "SEU_STORAGE_BUCKET.appspot.com",
-        messagingSenderId: "SEU_MESSAGING_SENDER_ID",
-        appId: "SEU_APP_ID",
-        databaseURL: "https://SEU_PROJECT_ID.firebaseio.com"
-    };
+            if (gameActive && !gameOver) {
+                if (isJumping) {
+                    playerY += jumpForce;
+                    jumpForce += gravity;
+                    if (playerY > height - playerSize - 100) {
+                        playerY = height - playerSize - 100;
+                        isJumping = false;
+                        jumpForce = 0;
+                    } else {
+                        rotationAngle -= 5.3;
+                    }
+                } else {
+                    playerY += gravity;
+                    if (rotationAngle !== 0) rotationAngle = 0;
+                }
 
-    // Inicializa o Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
+                playerX += playerSpeed;
+                cameraX = playerX - width / 7;
+                generateObstacles();
+                updateObstacles();
+                generateParticles();
+                updateParticles();
 
-    // Função para salvar dados no Firebase após o login com Telegram
-    function saveUserToFirebase(id, firstName, lastName) {
-        firebase.database().ref('users/' + id).set({
-            telegramId: id,
-            firstName: firstName,
-            lastName: lastName
-        }).then(() => {
-            document.getElementById("message").innerText = "Usuário salvo com sucesso!";
-        }).catch((error) => {
-            document.getElementById("message").innerText = "Erro ao salvar usuário: " + error.message;
-        });
-    }
+                score++;
+            }
 
-    // Callback para o Telegram Login Widget
-    function onTelegramAuth(user) {
-        saveUserToFirebase(user.id, user.first_name, user.last_name);
-    }
-</script>
+            drawGround();
+            drawPlayer();
+            drawObstacles();
+            drawParticles();
+            showScore();
 
+            if (gameOver) showGameOverScreen();
+        }
+
+        function keyPressed() {
+            if (key == ' ') {
+                if (!isJumping) {
+                    isJumping = true;
+                    jumpForce = -20;
+                }
+            }
+        }
+
+        function mousePressed() {
+            if (gameOver && mouseY > height / 2 + 50 && mouseY < height / 2 + 100) {
+                resetGame();
+            } else if (!isJumping) {
+                isJumping = true;
+                jumpForce = -20;
+            }
+        }
+
+        function resetGame() {
+            playerX = 50;
+            playerY = height - playerSize - 100;
+            isJumping = false;
+            jumpForce = 0;
+            obstacles = [];
+            particles = [];
+            rotationAngle = 0;
+            if (score > highScore) highScore = score;
+            score = 0;
+            gameOver = false;
+        }
+
+        function showScore() {
+            fill(255);
+            text(`Score: ${score}`, 100, 50);
+            text(`High Score: ${highScore}`, width - 200, 50);
+        }
+
+        function showGameOverScreen() {
+            fill(255);
+            textSize(100);
+            text("Game Over", width / 2, height / 2 - 50);
+            textSize(36);
+            text("Click to Restart", width / 2, height / 2 + 100);
+        }
+
+        function drawGround() {
+            stroke(255);
+            strokeWeight(5);
+            line(0 - cameraX, groundY, width, groundY);
+        }
+
+        function drawPlayer() {
+            push();
+            translate(playerX - cameraX + playerSize / 2, playerY + playerSize / 2);
+            rotate(radians(rotationAngle));
+            fill(255, 255, 0);
+            rectMode(CENTER);
+            rect(0, 0, playerSize, playerSize);
+            pop();
+        }
+
+        function generateObstacles() {
+            if (frameCount % 60 === 0) {
+                let obstacleSize = 40;
+                let obstacleY = height - obstacleSize - 62;
+                let obstacleX = playerX + width;
+                obstacles.push({x: obstacleX, y: obstacleY, size: obstacleSize});
+            }
+        }
+
+        function updateObstacles() {
+            obstacles.forEach(obstacle => {
+                obstacle.x -= playerSpeed;
+                if (playerX < obstacle.x + obstacle.size &&
+                    playerX + playerSize > obstacle.x &&
+                    playerY < obstacle.y + obstacle.size &&
+                    playerY + playerSize > obstacle.y) {
+                    gameOver = true;
+                }
+            });
+            obstacles = obstacles.filter(obstacle => obstacle.x - cameraX > 0);
+        }
+
+        function drawObstacles() {
+            obstacles.forEach(obstacle => {
+                fill(0);
+                stroke(255);
+                strokeWeight(3);
+                beginShape();
+                vertex(obstacle.x - cameraX, obstacle.y);
+                vertex(obstacle.x - cameraX + obstacle.size, obstacle.y);
+                vertex(obstacle.x - cameraX + obstacle.size / 2, obstacle.y - obstacle.size);
+                endShape(CLOSE);
+            });
+        }
+
+        function generateParticles() {
+            if (!isJumping && playerSpeed > 2 && particles.length < 50) {
+                let particleX = playerX + playerSize / 1.4;
+                let particleY = playerY + playerSize / 1.2 + random(-4, 4);
+                particles.push({x: particleX, y: particleY, size: 8, alpha: 255});
+            }
+        }
+
+        function updateParticles() {
+            particles.forEach(particle => {
+                particle.x -= playerSpeed;
+                particle.y += random(-0.4, 0.4);
+                particle.alpha -= 2;
+            });
+            particles = particles.filter(particle => particle.alpha > 0 && particle.x - cameraX > 0);
+        }
+
+        function drawParticles() {
+            particles.forEach(particle => {
+                fill(255, 255, 255, particle.alpha);
+                noStroke();
+                rect(particle.x - cameraX, particle.y, particle.size, particle.size);
+            });
+        }
+    </script>
 </body>
 </html>
