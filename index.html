@@ -13,158 +13,205 @@
             height: 100vh;
             background-color: black;
         }
+
         canvas {
-            display: block;
+            border: 2px solid white;
         }
     </style>
 </head>
 <body>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
-<script>
-let player;
-let obstacles = [];
-let score = 0;
-let highScore = 0;
-let isJumping = false;
-let jumpForce = 0;
-let gravity = 2.6;
-let playerSpeed = 4;
-let groundHeight = 100;
-let playerRotation = 0;
-let rotationSpeed = -5.3;
-let gameOver = false;
-let cameraX = 0;
+        canvas.width = 1280;
+        canvas.height = 720;
 
-function setup() {
-    createCanvas(1280, 720);
-    player = new Player(50, height - groundHeight - 50, 50, color(255, 255, 0));
-    textSize(45);
-}
+        const playerSize = 50;
+        let playerX = 50;
+        let playerY = canvas.height - playerSize - 100;
+        const playerSpeed = 4;
+        let gravity = 2.6;
+        let isJumping = false;
+        let jumpForce = 0;
+        let rotationAngle = 0;
+        const rotationSpeed = -5.3;
+        let obstacles = [];
+        let nextObstacleTime = 0;
+        let score = 0;
+        let highScore = 0;
 
-function draw() {
-    background(0);
+        const restartButton = {
+            x: canvas.width / 2 - 100,
+            y: canvas.height / 2 + 50,
+            width: 200,
+            height: 50,
+        };
 
-    // Desenhar e atualizar jogador
-    if (!gameOver) {
-        player.update();
-        player.show();
-    }
+        let gameOver = false;
 
-    // Gerar obstáculos
-    if (frameCount % int(random(30, 100)) === 0) {
-        obstacles.push(new Obstacle(width + cameraX, height - groundHeight - 40, 40));
-    }
-
-    // Desenhar e atualizar obstáculos
-    for (let i = obstacles.length - 1; i >= 0; i--) {
-        obstacles[i].update();
-        obstacles[i].show();
-
-        // Verificar colisão
-        if (player.hits(obstacles[i])) {
-            gameOver = true;
+        // Função para desenhar o jogador
+        function drawPlayer() {
+            ctx.save();
+            ctx.translate(playerX + playerSize / 2, playerY + playerSize / 2);
+            ctx.rotate((rotationAngle * Math.PI) / 180);
+            ctx.fillStyle = "yellow";
+            ctx.fillRect(-playerSize / 2, -playerSize / 2, playerSize, playerSize);
+            ctx.restore();
         }
 
-        // Remover obstáculos fora da tela
-        if (obstacles[i].offscreen()) {
-            obstacles.splice(i, 1);
-            score++;
+        // Função para desenhar o chão
+        function drawGround() {
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height - 100);
+            ctx.lineTo(canvas.width, canvas.height - 100);
+            ctx.stroke();
         }
-    }
 
-    // Mostrar pontuação
-    fill(255);
-    text("Score: " + score, 10, 50);
-    text("High Score: " + highScore, width - 250, 50);
+        // Função para gerar obstáculos
+        function generateObstacle() {
+            const obstacleSize = 40;
+            const obstacleY = canvas.height - obstacleSize - 100;
+            const obstacleX = canvas.width;
+            obstacles.push({ x: obstacleX, y: obstacleY, size: obstacleSize });
+            nextObstacleTime = Date.now() + Math.random() * 1000;
+        }
 
-    if (gameOver) {
-        fill(255);
-        textAlign(CENTER);
-        textSize(100);
-        text("Game Over", width / 2, height / 2);
-        textSize(36);
-        text("Clique para reiniciar", width / 2, height / 2 + 100);
-    }
-}
+        // Função para desenhar obstáculos
+        function drawObstacles() {
+            obstacles.forEach((obstacle) => {
+                ctx.fillStyle = "black";
+                ctx.beginPath();
+                ctx.moveTo(obstacle.x, obstacle.y);
+                ctx.lineTo(obstacle.x + obstacle.size, obstacle.y);
+                ctx.lineTo(obstacle.x + obstacle.size / 2, obstacle.y - obstacle.size);
+                ctx.closePath();
+                ctx.fill();
 
-function mousePressed() {
-    if (gameOver) {
-        gameOver = false;
-        score = 0;
-        player = new Player(50, height - groundHeight - 50, 50, color(255, 255, 0));
-        obstacles = [];
-    } else if (!isJumping) {
-        isJumping = true;
-        jumpForce = -20;
-    }
-}
+                ctx.strokeStyle = "white";
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            });
+        }
 
-class Player {
-    constructor(x, y, size, col) {
-        this.x = x;
-        this.y = y;
-        this.size = size;
-        this.col = col;
-        this.gravity = gravity;
-        this.velocity = 0;
-        this.rotation = 0;
-    }
+        // Função para exibir a pontuação
+        function showScore() {
+            ctx.fillStyle = "white";
+            ctx.font = "45px Arial";
+            ctx.fillText(`Score: ${score}`, 10, 40);
+            ctx.fillText(`High Score: ${highScore}`, canvas.width - 250, 40);
+        }
 
-    update() {
-        this.y += this.velocity;
-        this.velocity += this.gravity;
+        // Função para exibir a tela de game over
+        function showGameOverScreen() {
+            ctx.fillStyle = "white";
+            ctx.font = "100px Arial";
+            ctx.fillText("Game Over", canvas.width / 2 - 250, canvas.height / 2 - 50);
 
-        if (this.y > height - this.size - groundHeight) {
-            this.y = height - this.size - groundHeight;
-            this.velocity = 0;
+            ctx.fillStyle = "white";
+            ctx.fillRect(restartButton.x, restartButton.y, restartButton.width, restartButton.height);
+            ctx.fillStyle = "black";
+            ctx.font = "36px Arial";
+            ctx.fillText("Reiniciar", restartButton.x + 50, restartButton.y + 35);
+        }
+
+        // Função para resetar o jogo
+        function resetGame() {
+            playerX = 50;
+            playerY = canvas.height - playerSize - 100;
             isJumping = false;
+            jumpForce = 0;
+            obstacles = [];
+            score = 0;
+            gameOver = false;
+            rotationAngle = 0;
         }
 
-        cameraX = this.x - width / 7;
-    }
+        // Função principal do jogo
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGround();
 
-    show() {
-        push();
-        translate(this.x - cameraX, this.y);
-        rotate(radians(this.rotation));
-        fill(this.col);
-        rectMode(CENTER);
-        rect(0, 0, this.size, this.size);
-        pop();
-    }
+            if (!gameOver) {
+                if (isJumping) {
+                    playerY += jumpForce;
+                    jumpForce += gravity;
 
-    hits(obstacle) {
-        return collideRectRect(this.x, this.y, this.size, this.size, obstacle.x - cameraX, obstacle.y, obstacle.size, obstacle.size);
-    }
-}
+                    if (playerY > canvas.height - playerSize - 100) {
+                        playerY = canvas.height - playerSize - 100;
+                        isJumping = false;
+                        jumpForce = 0;
+                    } else {
+                        rotationAngle += rotationSpeed;
+                    }
+                } else {
+                    playerY += gravity;
 
-class Obstacle {
-    constructor(x, y, size) {
-        this.x = x;
-        this.y = y;
-        this.size = size;
-    }
+                    if (rotationAngle !== 0) {
+                        rotationAngle = 0;
+                    }
 
-    update() {
-        this.x -= playerSpeed;
-    }
+                    if (playerY > canvas.height - playerSize - 100) {
+                        playerY = canvas.height - playerSize - 100;
+                    }
+                }
 
-    show() {
-        fill(0);
-        stroke(255);
-        strokeWeight(3);
-        push();
-        translate(this.x - cameraX, this.y);
-        triangle(0, this.size, this.size, this.size, this.size / 2, 0);
-        pop();
-    }
+                playerX += playerSpeed;
 
-    offscreen() {
-        return this.x - cameraX < -this.size;
-    }
-}
-</script>
+                if (Date.now() > nextObstacleTime) {
+                    generateObstacle();
+                }
 
+                obstacles = obstacles.filter((obstacle) => {
+                    obstacle.x -= playerSpeed;
+
+                    if (
+                        playerX < obstacle.x + obstacle.size &&
+                        playerX + playerSize > obstacle.x &&
+                        playerY < obstacle.y + obstacle.size &&
+                        playerY + playerSize > obstacle.y
+                    ) {
+                        gameOver = true;
+                    }
+
+                    return obstacle.x + obstacle.size > 0;
+                });
+
+                drawObstacles();
+                score += 1;
+            } else {
+                showGameOverScreen();
+            }
+
+            drawPlayer();
+            showScore();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Lida com entradas do jogador
+        window.addEventListener("keydown", (e) => {
+            if (e.code === "Space" && !isJumping && !gameOver) {
+                isJumping = true;
+                jumpForce = -20;
+            }
+        });
+
+        canvas.addEventListener("click", (e) => {
+            if (
+                e.offsetX >= restartButton.x &&
+                e.offsetX <= restartButton.x + restartButton.width &&
+                e.offsetY >= restartButton.y &&
+                e.offsetY <= restartButton.y + restartButton.height
+            ) {
+                resetGame();
+            }
+        });
+
+        gameLoop();
+    </script>
 </body>
 </html>
