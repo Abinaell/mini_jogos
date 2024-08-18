@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Geometric Dash Clone</title>
+    <title>Geometry Dash Clone</title>
     <style>
         body {
             margin: 0;
@@ -16,11 +16,27 @@
 
         canvas {
             border: 2px solid white;
+            background-color: #2c2c2c;
+        }
+
+        .button {
+            display: none;
+            position: absolute;
+            padding: 10px 20px;
+            font-size: 24px;
+            color: white;
+            background-color: red;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            text-align: center;
         }
     </style>
 </head>
 <body>
     <canvas id="gameCanvas"></canvas>
+    <button id="restartButton" class="button">Reiniciar</button>
+
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
@@ -31,7 +47,7 @@
         const playerSize = 50;
         let playerX = 50;
         let playerY = canvas.height - playerSize - 100;
-        const playerSpeed = 4;
+        const playerSpeed = 6;
         let gravity = 2.6;
         let isJumping = false;
         let jumpForce = 0;
@@ -42,16 +58,10 @@
         let score = 0;
         let highScore = 0;
 
-        const restartButton = {
-            x: canvas.width / 2 - 100,
-            y: canvas.height / 2 + 50,
-            width: 200,
-            height: 50,
-        };
+        const restartButton = document.getElementById("restartButton");
 
         let gameOver = false;
 
-        // Função para desenhar o jogador
         function drawPlayer() {
             ctx.save();
             ctx.translate(playerX + playerSize / 2, playerY + playerSize / 2);
@@ -61,7 +71,6 @@
             ctx.restore();
         }
 
-        // Função para desenhar o chão
         function drawGround() {
             ctx.strokeStyle = "white";
             ctx.lineWidth = 5;
@@ -71,23 +80,21 @@
             ctx.stroke();
         }
 
-        // Função para gerar obstáculos
         function generateObstacle() {
-            const obstacleSize = 40;
+            const obstacleSize = 50;
             const obstacleY = canvas.height - obstacleSize - 100;
             const obstacleX = canvas.width;
             obstacles.push({ x: obstacleX, y: obstacleY, size: obstacleSize });
             nextObstacleTime = Date.now() + Math.random() * 1000;
         }
 
-        // Função para desenhar obstáculos
         function drawObstacles() {
             obstacles.forEach((obstacle) => {
-                ctx.fillStyle = "black";
+                ctx.fillStyle = "red";
                 ctx.beginPath();
-                ctx.moveTo(obstacle.x, obstacle.y);
-                ctx.lineTo(obstacle.x + obstacle.size, obstacle.y);
-                ctx.lineTo(obstacle.x + obstacle.size / 2, obstacle.y - obstacle.size);
+                ctx.moveTo(obstacle.x, obstacle.y + obstacle.size);
+                ctx.lineTo(obstacle.x + obstacle.size, obstacle.y + obstacle.size);
+                ctx.lineTo(obstacle.x + obstacle.size / 2, obstacle.y);
                 ctx.closePath();
                 ctx.fill();
 
@@ -97,28 +104,22 @@
             });
         }
 
-        // Função para exibir a pontuação
         function showScore() {
             ctx.fillStyle = "white";
             ctx.font = "45px Arial";
             ctx.fillText(`Score: ${score}`, 10, 40);
-            ctx.fillText(`High Score: ${highScore}`, canvas.width - 250, 40);
+            ctx.fillText(`High Score: ${highScore}`, canvas.width - 300, 40);
         }
 
-        // Função para exibir a tela de game over
         function showGameOverScreen() {
             ctx.fillStyle = "white";
             ctx.font = "100px Arial";
             ctx.fillText("Game Over", canvas.width / 2 - 250, canvas.height / 2 - 50);
-
-            ctx.fillStyle = "white";
-            ctx.fillRect(restartButton.x, restartButton.y, restartButton.width, restartButton.height);
-            ctx.fillStyle = "black";
-            ctx.font = "36px Arial";
-            ctx.fillText("Reiniciar", restartButton.x + 50, restartButton.y + 35);
+            restartButton.style.display = "block";
+            restartButton.style.left = `${canvas.width / 2 - 100}px`;
+            restartButton.style.top = `${canvas.height / 2 + 50}px`;
         }
 
-        // Função para resetar o jogo
         function resetGame() {
             playerX = 50;
             playerY = canvas.height - playerSize - 100;
@@ -128,9 +129,9 @@
             score = 0;
             gameOver = false;
             rotationAngle = 0;
+            restartButton.style.display = "none";
         }
 
-        // Função principal do jogo
         function gameLoop() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawGround();
@@ -183,6 +184,9 @@
                 drawObstacles();
                 score += 1;
             } else {
+                if (score > highScore) {
+                    highScore = score;
+                }
                 showGameOverScreen();
             }
 
@@ -192,7 +196,6 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // Lida com entradas do jogador
         window.addEventListener("keydown", (e) => {
             if (e.code === "Space" && !isJumping && !gameOver) {
                 isJumping = true;
@@ -200,16 +203,7 @@
             }
         });
 
-        canvas.addEventListener("click", (e) => {
-            if (
-                e.offsetX >= restartButton.x &&
-                e.offsetX <= restartButton.x + restartButton.width &&
-                e.offsetY >= restartButton.y &&
-                e.offsetY <= restartButton.y + restartButton.height
-            ) {
-                resetGame();
-            }
-        });
+        restartButton.addEventListener("click", resetGame);
 
         gameLoop();
     </script>
